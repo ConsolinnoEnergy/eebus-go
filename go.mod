@@ -23,11 +23,14 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	gitlab.com/c0b/go-ordered-json v0.0.0-20201030195603-febf46534d5a // indirect
 	go.uber.org/mock v0.4.0 // indirect
+	golang.org/x/exp/event v0.0.0-20220217172124-1812c5b45e43 // indirect
+	golang.org/x/exp/jsonrpc2 v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/tools v0.25.0 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
