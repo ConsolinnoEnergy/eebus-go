@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 
 	"github.com/enbility/eebus-go/api"
@@ -46,7 +47,7 @@ func (r *Remote) Listen(context context.Context, network, address string) error 
 	}
 
 	connOpts := jsonrpc2.ConnectionOptions{
-		Framer:    jsonrpc2.RawFramer(),
+		Framer:    NewlineFramer{},
 		Preempter: nil,
 		Handler:   jsonrpc2.HandlerFunc(r.handleRPC),
 	}
@@ -83,8 +84,7 @@ func (r *Remote) handleRPC(ctx context.Context, req *jsonrpc2.Request) (interfac
 	if req.IsCall() {
 		method, found := r.calls[req.Method]
 		if !found {
-			// TODO: unify error reporting
-			return jsonrpc2.NewResponse(req.ID, nil, errors.New("unknown method"))
+			return nil, jsonrpc2.ErrNotHandled
 		}
 
 		var params []interface{}
@@ -112,16 +112,24 @@ func (r *Remote) handleRPC(ctx context.Context, req *jsonrpc2.Request) (interfac
 		}
 
 		output := reflect.ValueOf(method).Call(methodParams)
-		switch methodType.NumOut() {
+		log.Printf("output: %v\n", output)
+
+		var resp interface{}
+		numOut := methodType.NumOut()
+		switch numOut {
 		case 0:
-			return jsonrpc2.NewResponse(req.ID, []interface{}{}, nil)
+			resp = []interface{}{}
 		case 1:
-			// TODO: verify jsonrpc output on reflect []Values
-			return jsonrpc2.NewResponse(req.ID, output[0], nil)
+			resp = output[0].Interface()
 		default:
-			// TODO: verify jsonrpc output on reflect []Values
-			return jsonrpc2.NewResponse(req.ID, output, nil)
+			r := make([]interface{}, numOut)
+			for i, e := range output {
+				r[i] = e.Interface()
+			}
+			resp = r
 		}
+		log.Printf("resp: %+v\n", resp)
+		return resp, nil
 	} else {
 		// RPC Notification
 		// TODO: implement
