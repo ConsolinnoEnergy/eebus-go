@@ -36,6 +36,7 @@ func main() {
 	if err = r.Listen(ctx, "tcp", net.JoinHostPort("::", strconv.Itoa(3393))); err != nil {
 		log.Fatal(err)
 	}
+	log.Print("Started")
 
 	// Clean exit to make sure mdns shutdown is invoked
 	sig := make(chan os.Signal, 1)
