@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/enbility/eebus-go/api"
+	"github.com/enbility/eebus-go/service"
+	"github.com/enbility/eebus-go/usecases/eg/lpc"
 	"github.com/enbility/ship-go/cert"
 	"github.com/enbility/spine-go/model"
 )
@@ -31,6 +33,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// r.RegisterUseCase(model.EntityTypeTypeGridGuard, UseCaseBuilder(lpc.NewLPC))
+	r.RegisterUseCase(func(service *service.Service, eventCB api.EntityEventCallback) api.UseCaseInterface {
+		return lpc.NewLPC(r.service.LocalDevice().EntityForType(model.EntityTypeTypeCEM), eventCB)
+	})
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	if err = r.Listen(ctx, "tcp", net.JoinHostPort("::", strconv.Itoa(3393))); err != nil {

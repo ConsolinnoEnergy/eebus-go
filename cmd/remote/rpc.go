@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -89,14 +88,13 @@ func (r *Remote) handleRPC(ctx context.Context, req *jsonrpc2.Request) (interfac
 
 		var params []interface{}
 		if err := json.Unmarshal(req.Params, &params); err != nil {
-			return jsonrpc2.NewResponse(req.ID, nil, err)
+			return nil, jsonrpc2.ErrParse
 		}
 
 		methodType := reflect.TypeOf(method)
 		neededParams := methodType.NumIn()
 		if len(params) != neededParams {
-			// TODO: unify error reporting
-			return jsonrpc2.NewResponse(req.ID, nil, errors.New("type error"))
+			return nil, jsonrpc2.ErrInvalidParams
 		}
 
 		methodParams := make([]reflect.Value, neededParams)
@@ -105,8 +103,7 @@ func (r *Remote) handleRPC(ctx context.Context, req *jsonrpc2.Request) (interfac
 			paramValue := reflect.ValueOf(params[i])
 
 			if !paramValue.CanConvert(paramType) {
-				// TODO: unify error reporting
-				return jsonrpc2.NewResponse(req.ID, nil, errors.New("type error"))
+				return nil, jsonrpc2.ErrInvalidParams
 			}
 			methodParams[i] = paramValue.Convert(paramType)
 		}
@@ -121,6 +118,8 @@ func (r *Remote) handleRPC(ctx context.Context, req *jsonrpc2.Request) (interfac
 			resp = []interface{}{}
 		case 1:
 			resp = output[0].Interface()
+		case 2:
+			// TODO: handle output[0] == error specially
 		default:
 			r := make([]interface{}, numOut)
 			for i, e := range output {
