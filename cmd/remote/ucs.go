@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/enbility/eebus-go/api"
-	"github.com/enbility/eebus-go/service"
 	spineapi "github.com/enbility/spine-go/api"
+	"github.com/enbility/spine-go/model"
 )
 
 type UseCaseId string
@@ -15,22 +16,24 @@ const (
 	UseCaseTypeLPC UseCaseTypeType = "LPC"
 )
 
-type UseCaseBuilder func(*service.Service, api.EntityEventCallback) api.UseCaseInterface
+type UseCaseBuilder func(spineapi.EntityLocalInterface, api.EntityEventCallback) api.UseCaseInterface
 
-func (r *Remote) RegisterUseCase(builder UseCaseBuilder) (UseCaseId, error) {
-	var id UseCaseId = UseCaseId("test")
+func (r *Remote) RegisterUseCase(entityType model.EntityTypeType, usecaseId string, builder UseCaseBuilder) {
+	// entityType/uc
+	var identifier UseCaseId = UseCaseId(fmt.Sprintf("%s/%s", entityType, usecaseId))
 
-	uc := builder(r.service, func(
+	localInterface := r.service.LocalDevice().EntityForType(entityType)
+	uc := builder(localInterface, func(
 		ski string,
 		device spineapi.DeviceRemoteInterface,
 		entity spineapi.EntityRemoteInterface,
 		event api.EventType,
 	) {
-		r.PropagateEvent(id, ski, device, entity, event)
+		r.PropagateEvent(identifier, ski, device, entity, event)
 	})
 	r.service.AddUseCase(uc)
 
-	return id, nil
+	r.RegisterMethods(string(identifier), uc)
 }
 
 func (r *Remote) PropagateEvent(
