@@ -38,21 +38,21 @@ func (svc *methodProxy) Call(methodName string, params []interface{}) ([]reflect
 	neededParams := methodType.NumIn()
 	// don't count receiver as needed -> neededParams - 1
 	if len(params) != (neededParams - 1) {
-		log.Printf("%v != %v\n", len(params), neededParams)
 		return nil, jsonrpc2.ErrInvalidParams
 	}
 
 	methodParams := make([]reflect.Value, neededParams)
 	methodParams[0] = svc.rcvr
-	for i := 1; i < neededParams; i++ {
-		paramType := methodType.In(i)
-		paramValue := reflect.ValueOf(params[i])
+	for dstIndex := 1; dstIndex < neededParams; dstIndex++ {
+		paramType := methodType.In(dstIndex)
+		// i - 1 due to receiver offset
+		paramIndex := dstIndex - 1
+		paramValue := reflect.ValueOf(params[paramIndex])
 
 		if !paramValue.CanConvert(paramType) {
-			log.Printf("!%v.CanConvert(%v)\n", paramValue, paramType)
 			return nil, jsonrpc2.ErrInvalidParams
 		}
-		methodParams[i] = paramValue.Convert(paramType)
+		methodParams[dstIndex] = paramValue.Convert(paramType)
 	}
 
 	output := method.Func.Call(methodParams)
@@ -201,7 +201,6 @@ func (r *Remote) handleRPC(ctx context.Context, req *jsonrpc2.Request) (interfac
 		if err != nil {
 			return nil, err
 		}
-		log.Printf("output: %v\n", output)
 
 		var resp interface{}
 		numOut := len(output)
@@ -219,7 +218,6 @@ func (r *Remote) handleRPC(ctx context.Context, req *jsonrpc2.Request) (interfac
 			}
 			resp = r
 		}
-		log.Printf("resp: %+v\n", resp)
 		return resp, nil
 	} else {
 		// RPC Notification
