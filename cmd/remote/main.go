@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"log"
 	"net"
 	"os"
@@ -17,11 +18,27 @@ import (
 	"github.com/enbility/spine-go/model"
 )
 
-func main() {
-	certificate, err := cert.CreateCertificate("Demo", "Demo", "DE", "Demo-Unit-02")
+func loadCertificate(crtPath, keyPath string) tls.Certificate {
+	certificate, err := tls.LoadX509KeyPair(crtPath, keyPath)
 	if err != nil {
-		log.Fatal(err)
+		certificate, err = cert.CreateCertificate("Demo", "Demo", "DE", "Demo-Unit-02")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if err = WriteKey(certificate, keyPath); err != nil {
+			log.Fatal(err)
+		}
+		if err = WriteCertificate(certificate, crtPath); err != nil {
+			log.Fatal(err)
+		}
 	}
+
+	return certificate
+}
+
+func main() {
+	certificate := loadCertificate("cert.pem", "key.pem")
 
 	configuration, err := api.NewConfiguration(
 		"Demo", "Demo", "HEMS", "898237",
