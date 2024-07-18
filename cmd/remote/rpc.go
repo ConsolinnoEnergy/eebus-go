@@ -75,6 +75,9 @@ func (svc *methodProxy) Call(remote *Remote, methodName string, params json.RawM
 			log.Printf("address: %v", address)
 			log.Printf("map: %v", remote.entityInterfaces[fmt.Sprintf("%s", address)])
 			methodParams[dstIndex] = reflect.ValueOf(remote.entityInterfaces[fmt.Sprintf("%s", address)])
+		} else if decodedParams[paramIndex] == nil {
+			// some parameters are optional and allowed to be nil
+			methodParams[dstIndex] = reflect.New(paramType).Elem()
 		} else {
 			methodParams[dstIndex] = reflect.ValueOf(decodedParams[paramIndex]).Elem()
 		}
@@ -245,7 +248,19 @@ func (r *Remote) handleRPC(ctx context.Context, req *jsonrpc2.Request) (interfac
 		case 1:
 			resp = output[0].Interface()
 		case 2:
-			// TODO: handle output[0] == error specially
+			if output[1].Type().Implements(reflect.TypeFor[error]()) {
+				if !output[1].IsNil() {
+					log.Printf("error handling %v: %v", req.Method, output[1].Interface())
+					return nil, jsonrpc2.ErrInternal
+				}
+				resp = output[0].Interface()
+			} else {
+				r := make([]interface{}, numOut)
+				for i, e := range output {
+					r[i] = e.Interface()
+				}
+				resp = r
+			}
 		default:
 			r := make([]interface{}, numOut)
 			for i, e := range output {
