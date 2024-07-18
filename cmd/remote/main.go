@@ -13,7 +13,10 @@ import (
 	"time"
 
 	"github.com/enbility/eebus-go/api"
+	"github.com/enbility/eebus-go/usecases/cem/evcc"
+	"github.com/enbility/eebus-go/usecases/cem/evsecc"
 	"github.com/enbility/eebus-go/usecases/eg/lpc"
+	"github.com/enbility/eebus-go/usecases/ma/mpc"
 	"github.com/enbility/ship-go/cert"
 	spineapi "github.com/enbility/spine-go/api"
 	"github.com/enbility/spine-go/model"
@@ -75,7 +78,10 @@ func main() {
 	configuration, err := api.NewConfiguration(
 		config.vendorCode, config.deviceBrand, config.deviceModel, config.serialNumber,
 		model.DeviceTypeTypeEnergyManagementSystem,
-		[]model.EntityTypeType{model.EntityTypeTypeGridGuard, model.EntityTypeTypeCEM},
+		[]model.EntityTypeType{
+			model.EntityTypeTypeGridGuard,
+			model.EntityTypeTypeCEM,
+		},
 		23292, certificate, time.Second*4)
 	if *iface != "" {
 		configuration.SetInterfaces([]string{*iface})
@@ -103,6 +109,15 @@ func main() {
 
 	r.RegisterUseCase(model.EntityTypeTypeCEM, "EG-LPC", func(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCallback) api.UseCaseInterface {
 		return lpc.NewLPC(localEntity, eventCB)
+	})
+	r.RegisterUseCase(model.EntityTypeTypeCEM, "MA-MPC", func(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCallback) api.UseCaseInterface {
+		return mpc.NewMPC(localEntity, eventCB)
+	})
+	r.RegisterUseCase(model.EntityTypeTypeCEM, "CEM-EVCC", func(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCallback) api.UseCaseInterface {
+		return evcc.NewEVCC(r.service, localEntity, eventCB)
+	})
+	r.RegisterUseCase(model.EntityTypeTypeCEM, "CEM-EVSECC", func(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCallback) api.UseCaseInterface {
+		return evsecc.NewEVSECC(localEntity, eventCB)
 	})
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
