@@ -46,7 +46,11 @@ func (r *Remote) PropagateEvent(
 	// convert between EntityRemoteInterface and EntityAddressType
 	address := entity.Address()
 	r.entityInterfaces[fmt.Sprintf("%s", address)] = entity
+
+	params := make(map[string]interface{}, 2)
+	params["device"] = device.Ski()
+	params["entity"] = address
 	for _, conn := range r.connections {
-		conn.Notify(context.Background(), string(event), address)
+		conn.Notify(context.Background(), string(event), params)
 	}
 }
