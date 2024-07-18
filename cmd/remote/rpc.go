@@ -61,6 +61,10 @@ func (svc *methodProxy) Call(remote *Remote, methodName string, params json.RawM
 	}
 	log.Printf("post: decodedParams %v", decodedParams)
 
+	if len(decodedParams) != neededParams-1 {
+		return nil, jsonrpc2.ErrInvalidParams
+	}
+
 	methodParams := make([]reflect.Value, neededParams)
 	methodParams[0] = svc.rcvr
 	for dstIndex := 1; dstIndex < neededParams; dstIndex++ {
