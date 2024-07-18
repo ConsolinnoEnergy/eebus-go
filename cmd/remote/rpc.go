@@ -118,6 +118,16 @@ func (r Remote) ConnectedDevices() []string {
 	return skiList
 }
 
+func (r Remote) RemoteDeviceInfo(ski string) map[string]string {
+	remoteDevice := r.service.LocalDevice().RemoteDeviceForSki(ski)
+	result := make(map[string]string)
+
+	result["address"] = string(*remoteDevice.Address())
+	result["deviceType"] = string(*remoteDevice.DeviceType())
+
+	return result
+}
+
 func (r Remote) LocalSKI() string {
 	return r.service.LocalService().SKI()
 }
