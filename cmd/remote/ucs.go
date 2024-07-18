@@ -33,7 +33,7 @@ func (r *Remote) RegisterUseCase(entityType model.EntityTypeType, usecaseId stri
 	})
 	r.service.AddUseCase(uc)
 
-	r.RegisterMethods(string(identifier), uc)
+	r.RegisterMethods(usecaseId, uc)
 }
 
 func (r *Remote) PropagateEvent(
