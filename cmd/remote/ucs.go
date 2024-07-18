@@ -43,7 +43,10 @@ func (r *Remote) PropagateEvent(
 	entity spineapi.EntityRemoteInterface,
 	event api.EventType,
 ) {
+	// convert between EntityRemoteInterface and EntityAddressType
+	address := entity.Address()
+	r.entityInterfaces[fmt.Sprintf("%s", address)] = entity
 	for _, conn := range r.connections {
-		conn.Notify(context.Background(), fmt.Sprintf("%s/%s", id, event), entity.Address())
+		conn.Notify(context.Background(), string(event), address)
 	}
 }
