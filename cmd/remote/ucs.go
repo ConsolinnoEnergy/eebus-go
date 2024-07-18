@@ -44,6 +44,6 @@ func (r *Remote) PropagateEvent(
 	event api.EventType,
 ) {
 	for _, conn := range r.connections {
-		conn.Notify(context.Background(), string(event), entity.Address())
+		conn.Notify(context.Background(), fmt.Sprintf("%s/%s", id, event), entity.Address())
 	}
 }
