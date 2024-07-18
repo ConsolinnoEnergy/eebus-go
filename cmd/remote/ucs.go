@@ -45,7 +45,10 @@ func (r *Remote) PropagateEvent(
 ) {
 	// convert between EntityRemoteInterface and EntityAddressType
 	address := entity.Address()
+
+	r.entityInterfaceLock.Lock()
 	r.entityInterfaces[fmt.Sprintf("%s", address)] = entity
+	r.entityInterfaceLock.Unlock()
 
 	params := make(map[string]interface{}, 2)
 	params["device"] = device.Ski()

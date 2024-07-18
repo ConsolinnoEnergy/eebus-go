@@ -9,6 +9,7 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/enbility/eebus-go/api"
 	"github.com/enbility/eebus-go/service"
@@ -88,9 +89,10 @@ type Remote struct {
 	rpc     *jsonrpc2.Server
 	service *service.Service
 
-	connections      []*jsonrpc2.Connection
-	remoteServices   []shipapi.RemoteService
-	entityInterfaces map[string]spineapi.EntityRemoteInterface
+	connections         []*jsonrpc2.Connection
+	remoteServices      []shipapi.RemoteService
+	entityInterfaces    map[string]spineapi.EntityRemoteInterface
+	entityInterfaceLock *sync.Mutex
 
 	rpcServices map[string]rpcService
 }
@@ -105,9 +107,10 @@ func (r Remote) LocalSKI() string {
 
 func NewRemote(configuration *api.Configuration) (*Remote, error) {
 	r := Remote{
-		connections:      []*jsonrpc2.Connection{},
-		remoteServices:   []shipapi.RemoteService{},
-		entityInterfaces: make(map[string]spineapi.EntityRemoteInterface),
+		connections:         []*jsonrpc2.Connection{},
+		remoteServices:      []shipapi.RemoteService{},
+		entityInterfaces:    make(map[string]spineapi.EntityRemoteInterface),
+		entityInterfaceLock: &sync.Mutex{},
 
 		rpcServices: make(map[string]rpcService),
 	}
