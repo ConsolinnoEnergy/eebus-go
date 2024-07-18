@@ -203,7 +203,7 @@ func (r Remote) RemoteSKIConnected(service api.ServiceInterface, ski string) {
 
 func (r Remote) RemoteSKIDisconnected(service api.ServiceInterface, ski string) {
 	params := make(map[string]interface{}, 1)
-	params["device"] = ski
+	params["ski"] = ski
 	for _, conn := range r.connections {
 		conn.Notify(context.Background(), "remote/RemoteSKIDisconnected", params)
 	}
