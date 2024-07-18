@@ -51,7 +51,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	r.RegisterUseCase(model.EntityTypeTypeCEM, "LPC", func(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCallback) api.UseCaseInterface {
+	r.RegisterUseCase(model.EntityTypeTypeCEM, "EG-LPC", func(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCallback) api.UseCaseInterface {
 		return lpc.NewLPC(localEntity, eventCB)
 	})
 

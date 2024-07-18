@@ -156,7 +156,7 @@ func (r *Remote) Listen(context context.Context, network, address string) error 
 }
 
 func (r *Remote) RegisterMethods(name string, rcvr any) error {
-	return r.registerMethods(rcvr, name, false)
+	return r.registerMethods(rcvr, name, true)
 }
 
 func (r *Remote) registerMethods(rcvr any, name string, useName bool) error {
