@@ -9,7 +9,6 @@ import (
 	"log"
 	"reflect"
 	"strings"
-	"sync"
 
 	"github.com/enbility/eebus-go/api"
 	"github.com/enbility/eebus-go/service"
@@ -72,18 +71,33 @@ func (svc *methodProxy) Call(remote *Remote, methodName string, params json.RawM
 		// i - 1 due to receiver offset
 		paramIndex := dstIndex - 1
 
-		if paramType == reflect.TypeFor[spineapi.EntityRemoteInterface]() {
-			// convert between EntityRemoteInterface and EntityAddressType
-			address, ok := decodedParams[paramIndex].(*model.EntityAddressType)
-			if !ok {
+		if paramType == reflect.TypeFor[spineapi.DeviceRemoteInterface]() {
+			// convert between DeviceRemoteInterface and DeviceAddressType
+			address, ok := decodedParams[paramIndex].(*model.DeviceAddressType)
+			if !ok || address.Device == nil {
 				return nil, jsonrpc2.ErrInvalidParams
 			}
-			log.Printf("entityInterfaces: %v", remote.entityInterfaces)
-			log.Printf("address: %v", address)
-			log.Printf("map: %v", remote.entityInterfaces[fmt.Sprintf("%s", address)])
 
-			entityInterface, ok := remote.entityInterfaces[fmt.Sprintf("%s", address)]
-			if !ok {
+			deviceInterface := remote.service.LocalDevice().RemoteDeviceForAddress(*address.Device)
+			if deviceInterface == nil {
+				return nil, jsonrpc2.ErrInvalidParams
+			}
+
+			methodParams[dstIndex] = reflect.ValueOf(deviceInterface)
+		} else if paramType == reflect.TypeFor[spineapi.EntityRemoteInterface]() {
+			// convert between EntityRemoteInterface and EntityAddressType
+			address, ok := decodedParams[paramIndex].(*model.EntityAddressType)
+			if !ok || address.Device == nil {
+				return nil, jsonrpc2.ErrInvalidParams
+			}
+
+			deviceInterface := remote.service.LocalDevice().RemoteDeviceForAddress(*address.Device)
+			if deviceInterface == nil {
+				return nil, jsonrpc2.ErrInvalidParams
+			}
+
+			entityInterface := deviceInterface.Entity(address.Entity)
+			if entityInterface == nil {
 				return nil, jsonrpc2.ErrInvalidParams
 			}
 
@@ -105,12 +119,30 @@ type Remote struct {
 	rpc     *jsonrpc2.Server
 	service *service.Service
 
-	connections         []*jsonrpc2.Connection
-	remoteServices      []shipapi.RemoteService
-	entityInterfaces    map[string]spineapi.EntityRemoteInterface
-	entityInterfaceLock *sync.Mutex
+	connections    []*jsonrpc2.Connection
+	remoteServices []shipapi.RemoteService
 
 	rpcServices map[string]rpcService
+}
+
+func NewRemote(configuration *api.Configuration) (*Remote, error) {
+	r := Remote{
+		connections:    []*jsonrpc2.Connection{},
+		remoteServices: []shipapi.RemoteService{},
+
+		rpcServices: make(map[string]rpcService),
+	}
+	r.service = service.NewService(configuration, &r)
+
+	r.RegisterMethods("service", r.service)
+	r.RegisterMethods("remote", &r)
+
+	if err := r.service.Setup(); err != nil {
+		return nil, err
+	}
+	r.service.SetLogging(&stdoutLogger{})
+
+	return &r, nil
 }
 
 func (r Remote) RemoteServices() []shipapi.RemoteService {
@@ -151,27 +183,6 @@ func (r Remote) RemoteDeviceInfo(ski string) (map[string]string, error) {
 
 func (r Remote) LocalSKI() string {
 	return r.service.LocalService().SKI()
-}
-
-func NewRemote(configuration *api.Configuration) (*Remote, error) {
-	r := Remote{
-		connections:         []*jsonrpc2.Connection{},
-		remoteServices:      []shipapi.RemoteService{},
-		entityInterfaces:    make(map[string]spineapi.EntityRemoteInterface),
-		entityInterfaceLock: &sync.Mutex{},
-
-		rpcServices: make(map[string]rpcService),
-	}
-	r.service = service.NewService(configuration, &r)
-
-	r.RegisterMethods("service", r.service)
-	r.RegisterMethods("remote", &r)
-
-	if err := r.service.Setup(); err != nil {
-		return nil, err
-	}
-
-	return &r, nil
 }
 
 func (r *Remote) Bind(context context.Context, conn *jsonrpc2.Connection) (jsonrpc2.ConnectionOptions, error) {

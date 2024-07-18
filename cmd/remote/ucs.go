@@ -43,16 +43,9 @@ func (r *Remote) PropagateEvent(
 	entity spineapi.EntityRemoteInterface,
 	event api.EventType,
 ) {
-	// convert between EntityRemoteInterface and EntityAddressType
-	address := entity.Address()
-
-	r.entityInterfaceLock.Lock()
-	r.entityInterfaces[fmt.Sprintf("%s", address)] = entity
-	r.entityInterfaceLock.Unlock()
-
 	params := make(map[string]interface{}, 2)
-	params["device"] = device.Ski()
-	params["entity"] = address
+	params["device"] = device.Address()
+	params["entity"] = entity.Address()
 	for _, conn := range r.connections {
 		conn.Notify(context.Background(), string(event), params)
 	}
