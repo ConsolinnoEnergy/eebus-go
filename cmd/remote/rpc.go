@@ -74,13 +74,19 @@ func (r Remote) RemoteServices() []shipapi.RemoteService {
 	return r.remoteServices
 }
 
+func (r Remote) LocalSKI() string {
+	return r.service.LocalService().SKI()
+}
+
 func NewRemote(configuration *api.Configuration) (*Remote, error) {
 	r := Remote{
+		connections:    []*jsonrpc2.Connection{},
+		remoteServices: []shipapi.RemoteService{},
+
 		rpcServices: make(map[string]rpcService),
 	}
 	r.service = service.NewService(configuration, &r)
-	// r.registerCall("service", "RegisterRemoteSKI", r.service.RegisterRemoteSKI)
-	// r.registerCall("service", "UnregisterRemoteSKI", r.service.UnregisterRemoteSKI)
+
 	r.RegisterMethods("service", r.service)
 	r.RegisterMethods("remote", &r)
 
@@ -91,19 +97,24 @@ func NewRemote(configuration *api.Configuration) (*Remote, error) {
 	return &r, nil
 }
 
-func (r *Remote) Listen(context context.Context, network, address string) error {
-	listener, err := jsonrpc2.NetListener(context, network, address, jsonrpc2.NetListenOptions{})
-	if err != nil {
-		return err
-	}
-
+func (r *Remote) Bind(context context.Context, conn *jsonrpc2.Connection) (jsonrpc2.ConnectionOptions, error) {
 	connOpts := jsonrpc2.ConnectionOptions{
 		Framer:    NewlineFramer{},
 		Preempter: nil,
 		Handler:   jsonrpc2.HandlerFunc(r.handleRPC),
 	}
 
-	conn, err := jsonrpc2.Serve(context, listener, connOpts)
+	r.connections = append(r.connections, conn)
+	return connOpts, nil
+}
+
+func (r *Remote) Listen(context context.Context, network, address string) error {
+	listener, err := jsonrpc2.NetListener(context, network, address, jsonrpc2.NetListenOptions{})
+	if err != nil {
+		return err
+	}
+
+	conn, err := jsonrpc2.Serve(context, listener, r)
 	if err != nil {
 		return err
 	}
