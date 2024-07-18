@@ -374,3 +374,53 @@ func (r Remote) ServiceShipIDUpdate(ski string, shipdID string) {
 
 func (r Remote) ServicePairingDetailUpdate(ski string, detail *shipapi.ConnectionStateDetail) {
 }
+
+// Logging interface
+
+type stdoutLogger struct{}
+
+func (l *stdoutLogger) Trace(args ...interface{}) {
+	// l.print("TRACE", args...)
+}
+
+func (l *stdoutLogger) Tracef(format string, args ...interface{}) {
+	// l.printFormat("TRACE", format, args...)
+}
+
+func (l *stdoutLogger) Debug(args ...interface{}) {
+	// l.print("DEBUG", args...)
+}
+
+func (l *stdoutLogger) Debugf(format string, args ...interface{}) {
+	// l.printFormat("DEBUG", format, args...)
+}
+
+func (l *stdoutLogger) Info(args ...interface{}) {
+	l.print("INFO ", args...)
+}
+
+func (l *stdoutLogger) Infof(format string, args ...interface{}) {
+	l.printFormat("INFO ", format, args...)
+}
+
+func (l *stdoutLogger) Error(args ...interface{}) {
+	l.print("ERROR", args...)
+}
+
+func (l *stdoutLogger) Errorf(format string, args ...interface{}) {
+	l.printFormat("ERROR", format, args...)
+}
+
+func (l *stdoutLogger) currentTimestamp() string {
+	return time.Now().Format("2006-01-02 15:04:05")
+}
+
+func (l *stdoutLogger) print(msgType string, args ...interface{}) {
+	value := fmt.Sprintln(args...)
+	fmt.Printf("%s %s %s", l.currentTimestamp(), msgType, value)
+}
+
+func (l *stdoutLogger) printFormat(msgType, format string, args ...interface{}) {
+	value := fmt.Sprintf(format, args...)
+	fmt.Println(l.currentTimestamp(), msgType, value)
+}
