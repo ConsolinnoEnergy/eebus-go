@@ -9,6 +9,7 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/enbility/eebus-go/api"
 	"github.com/enbility/eebus-go/service"
@@ -335,11 +336,25 @@ func (r *Remote) handleRPC(ctx context.Context, req *jsonrpc2.Request) (interfac
 
 // Implement api.ServiceReaderInterface
 func (r Remote) RemoteSKIConnected(service api.ServiceInterface, ski string) {
-	params := make(map[string]interface{}, 1)
-	params["device"] = ski
-	for _, conn := range r.connections {
-		conn.Notify(context.Background(), "remote/RemoteSKIConnected", params)
-	}
+	// necessary because RemoteSKIConnected is called before remote device actually exists
+	go func() {
+		params := make(map[string]interface{}, 1)
+		params["ski"] = ski
+
+		for {
+			// wait until RemoteDevice available for SKI
+			device := service.LocalDevice().RemoteDeviceForSki(ski)
+			if device != nil && device.Address() != nil {
+				params["device"] = *device.Address()
+				break
+			}
+			time.Sleep(1 * time.Second)
+		}
+
+		for _, conn := range r.connections {
+			conn.Notify(context.Background(), "remote/RemoteSKIConnected", params)
+		}
+	}()
 }
 
 func (r Remote) RemoteSKIDisconnected(service api.ServiceInterface, ski string) {
