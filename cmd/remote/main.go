@@ -17,6 +17,7 @@ import (
 	"github.com/enbility/eebus-go/usecases/cem/evsecc"
 	"github.com/enbility/eebus-go/usecases/eg/lpc"
 	"github.com/enbility/eebus-go/usecases/ma/mpc"
+	shipapi "github.com/enbility/ship-go/api"
 	"github.com/enbility/ship-go/cert"
 	spineapi "github.com/enbility/spine-go/api"
 	"github.com/enbility/spine-go/model"
@@ -77,6 +78,9 @@ func main() {
 
 	configuration, err := api.NewConfiguration(
 		config.vendorCode, config.deviceBrand, config.deviceModel, config.serialNumber,
+		[]shipapi.DeviceCategoryType{
+			shipapi.DeviceCategoryTypeEnergyManagementSystem,
+		},
 		model.DeviceTypeTypeEnergyManagementSystem,
 		[]model.EntityTypeType{
 			model.EntityTypeTypeGridGuard,
