@@ -48,6 +48,8 @@ func loadCertificate(config eebusConfiguration, crtPath, keyPath string) tls.Cer
 func main() {
 	config := eebusConfiguration{}
 
+	iface := flag.String("iface", "",
+		"Optional network interface the EEBUS connection should be limited to")
 	flag.StringVar(&config.vendorCode, "vendor", "", "EEBus vendor code")
 	flag.StringVar(&config.deviceBrand, "brand", "", "EEBus device brand")
 	flag.StringVar(&config.deviceModel, "model", "", "EEBus device model")
@@ -75,6 +77,24 @@ func main() {
 		model.DeviceTypeTypeEnergyManagementSystem,
 		[]model.EntityTypeType{model.EntityTypeTypeGridGuard, model.EntityTypeTypeCEM},
 		23292, certificate, time.Second*4)
+	if *iface != "" {
+		configuration.SetInterfaces([]string{*iface})
+		log.Printf("waiting until %v is up", iface)
+		for {
+			ifi, err := net.InterfaceByName(*iface)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			// wait until interface is up and available for multicast
+			flags := net.FlagUp | net.FlagMulticast
+			if (ifi.Flags & flags) == flags {
+				break
+			}
+			time.Sleep(1 * time.Second)
+		}
+		log.Printf("interface online, continuing")
+	}
 
 	r, err := NewRemote(configuration)
 	if err != nil {
