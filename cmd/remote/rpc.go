@@ -70,7 +70,10 @@ func (svc *methodProxy) Call(remote *Remote, methodName string, params json.RawM
 
 		if paramType == reflect.TypeFor[spineapi.EntityRemoteInterface]() {
 			// convert between EntityRemoteInterface and EntityAddressType
-			address := decodedParams[paramIndex].(*model.EntityAddressType)
+			address, ok := decodedParams[paramIndex].(*model.EntityAddressType)
+			if !ok {
+				return nil, jsonrpc2.ErrInvalidParams
+			}
 			log.Printf("entityInterfaces: %v", remote.entityInterfaces)
 			log.Printf("address: %v", address)
 			log.Printf("map: %v", remote.entityInterfaces[fmt.Sprintf("%s", address)])
