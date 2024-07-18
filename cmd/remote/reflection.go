@@ -106,8 +106,10 @@ type dynamicReceiverProxy struct{}
 
 func (svc dynamicReceiverProxy) Call(remote *Remote, methodName string, params json.RawMessage) ([]interface{}, error) {
 	decodedParams := []json.RawMessage{}
-	if err := json.Unmarshal(params, &decodedParams); err != nil {
-		return nil, jsonrpc2.ErrParse
+	if len(params) > 0 {
+		if err := json.Unmarshal(params, &decodedParams); err != nil {
+			return nil, jsonrpc2.ErrParse
+		}
 	}
 	log.Printf("decoded: %v(%v)", methodName, decodedParams)
 
@@ -217,8 +219,11 @@ func (svc *staticReceiverProxy) Call(remote *Remote, methodName string, params j
 		return nil, jsonrpc2.ErrNotHandled
 	}
 	splitParams := []json.RawMessage{}
-	if err := json.Unmarshal(params, &splitParams); err != nil {
-		return nil, jsonrpc2.ErrParse
+	if len(params) > 0 {
+		if err := json.Unmarshal(params, &splitParams); err != nil {
+			log.Printf("%v", err)
+			return nil, jsonrpc2.ErrParse
+		}
 	}
 
 	return callMethod(remote, methodName, method, splitParams)
