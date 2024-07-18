@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"flag"
 	"log"
 	"net"
 	"os"
@@ -18,10 +19,17 @@ import (
 	"github.com/enbility/spine-go/model"
 )
 
-func loadCertificate(crtPath, keyPath string) tls.Certificate {
+type eebusConfiguration struct {
+	vendorCode   string
+	deviceBrand  string
+	deviceModel  string
+	serialNumber string
+}
+
+func loadCertificate(config eebusConfiguration, crtPath, keyPath string) tls.Certificate {
 	certificate, err := tls.LoadX509KeyPair(crtPath, keyPath)
 	if err != nil {
-		certificate, err = cert.CreateCertificate("Demo", "Demo", "DE", "Demo-Unit-02")
+		certificate, err = cert.CreateCertificate(config.vendorCode, config.deviceModel, "DE", config.serialNumber)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -38,10 +46,32 @@ func loadCertificate(crtPath, keyPath string) tls.Certificate {
 }
 
 func main() {
-	certificate := loadCertificate("cert.pem", "key.pem")
+	config := eebusConfiguration{}
+
+	flag.StringVar(&config.vendorCode, "vendor", "", "EEBus vendor code")
+	flag.StringVar(&config.deviceBrand, "brand", "", "EEBus device brand")
+	flag.StringVar(&config.deviceModel, "model", "", "EEBus device model")
+	flag.StringVar(&config.serialNumber, "serial", "", "EEBus device serial")
+
+	flag.Parse()
+
+	if config.serialNumber == "" {
+		serialNumber, err := os.Hostname()
+		if err != nil {
+			log.Fatal(err)
+		}
+		config.serialNumber = serialNumber
+	}
+
+	if config.vendorCode == "" || config.deviceBrand == "" || config.deviceModel == "" {
+		flag.Usage()
+		return
+	}
+
+	certificate := loadCertificate(config, "cert.pem", "key.pem")
 
 	configuration, err := api.NewConfiguration(
-		"Demo", "Demo", "HEMS", "898237",
+		config.vendorCode, config.deviceBrand, config.deviceModel, config.serialNumber,
 		model.DeviceTypeTypeEnergyManagementSystem,
 		[]model.EntityTypeType{model.EntityTypeTypeGridGuard, model.EntityTypeTypeCEM},
 		23292, certificate, time.Second*4)
