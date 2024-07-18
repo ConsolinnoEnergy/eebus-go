@@ -104,6 +104,17 @@ func (r Remote) RemoteServices() []shipapi.RemoteService {
 	return r.remoteServices
 }
 
+func (r Remote) ConnectedDevices() []string {
+	remoteDevices := r.service.LocalDevice().RemoteDevices()
+	skiList := make([]string, len(remoteDevices))
+
+	for i, dev := range remoteDevices {
+		skiList[i] = dev.Ski()
+	}
+
+	return skiList
+}
+
 func (r Remote) LocalSKI() string {
 	return r.service.LocalService().SKI()
 }
