@@ -44,6 +44,7 @@ func (r *Remote) PropagateEvent(
 	event api.EventType,
 ) {
 	params := make(map[string]interface{}, 2)
+	params["ski"] = ski
 	params["device"] = device.Address()
 	params["entity"] = entity.Address()
 	for _, conn := range r.connections {
