@@ -77,7 +77,13 @@ func (svc *methodProxy) Call(remote *Remote, methodName string, params json.RawM
 			log.Printf("entityInterfaces: %v", remote.entityInterfaces)
 			log.Printf("address: %v", address)
 			log.Printf("map: %v", remote.entityInterfaces[fmt.Sprintf("%s", address)])
-			methodParams[dstIndex] = reflect.ValueOf(remote.entityInterfaces[fmt.Sprintf("%s", address)])
+
+			entityInterface, ok := remote.entityInterfaces[fmt.Sprintf("%s", address)]
+			if !ok {
+				return nil, jsonrpc2.ErrInvalidParams
+			}
+
+			methodParams[dstIndex] = reflect.ValueOf(entityInterface)
 		} else if decodedParams[paramIndex] == nil {
 			// some parameters are optional and allowed to be nil
 			methodParams[dstIndex] = reflect.New(paramType).Elem()
@@ -118,14 +124,25 @@ func (r Remote) ConnectedDevices() []string {
 	return skiList
 }
 
-func (r Remote) RemoteDeviceInfo(ski string) map[string]string {
+func (r Remote) RemoteDeviceInfo(ski string) (map[string]string, error) {
 	remoteDevice := r.service.LocalDevice().RemoteDeviceForSki(ski)
 	result := make(map[string]string)
 
-	result["address"] = string(*remoteDevice.Address())
-	result["deviceType"] = string(*remoteDevice.DeviceType())
+	if remoteDevice == nil {
+		return nil, fmt.Errorf("unknown SKI %v", ski)
+	}
 
-	return result
+	log.Printf("remoteDevice: %v", remoteDevice)
+	log.Printf("%v, %v", remoteDevice.Address(), remoteDevice.DeviceType())
+	if addr := remoteDevice.Address(); addr != nil {
+		result["address"] = string(*remoteDevice.Address())
+	}
+
+	if dType := remoteDevice.DeviceType(); dType != nil {
+		result["deviceType"] = string(*remoteDevice.DeviceType())
+	}
+
+	return result, nil
 }
 
 func (r Remote) LocalSKI() string {
