@@ -261,14 +261,18 @@ func (r *Remote) handleRPC(ctx context.Context, req *jsonrpc2.Request) (interfac
 
 // Implement api.ServiceReaderInterface
 func (r Remote) RemoteSKIConnected(service api.ServiceInterface, ski string) {
+	params := make(map[string]interface{}, 1)
+	params["device"] = ski
 	for _, conn := range r.connections {
-		conn.Notify(context.Background(), "remote/RemoteSKIConnected", []string{ski})
+		conn.Notify(context.Background(), "remote/RemoteSKIConnected", params)
 	}
 }
 
 func (r Remote) RemoteSKIDisconnected(service api.ServiceInterface, ski string) {
+	params := make(map[string]interface{}, 1)
+	params["device"] = ski
 	for _, conn := range r.connections {
-		conn.Notify(context.Background(), "remote/RemoteSKIDisconnected", []string{ski})
+		conn.Notify(context.Background(), "remote/RemoteSKIDisconnected", params)
 	}
 }
 
