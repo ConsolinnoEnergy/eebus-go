@@ -12,13 +12,15 @@ import (
 
 	"github.com/enbility/eebus-go/api"
 	"github.com/enbility/eebus-go/service"
+	spineapi "github.com/enbility/spine-go/api"
+	"github.com/enbility/spine-go/model"
 	"golang.org/x/exp/jsonrpc2"
 
 	shipapi "github.com/enbility/ship-go/api"
 )
 
 type rpcService interface {
-	Call(string, []interface{}) ([]reflect.Value, error)
+	Call(*Remote, string, json.RawMessage) ([]reflect.Value, error)
 }
 
 type methodProxy struct {
@@ -28,7 +30,7 @@ type methodProxy struct {
 	method map[string]reflect.Method
 }
 
-func (svc *methodProxy) Call(methodName string, params []interface{}) ([]reflect.Value, error) {
+func (svc *methodProxy) Call(remote *Remote, methodName string, params json.RawMessage) ([]reflect.Value, error) {
 	method, found := svc.method[methodName]
 	if !found {
 		return nil, jsonrpc2.ErrNotHandled
@@ -36,10 +38,27 @@ func (svc *methodProxy) Call(methodName string, params []interface{}) ([]reflect
 
 	methodType := method.Type
 	neededParams := methodType.NumIn()
-	// don't count receiver as needed -> neededParams - 1
-	if len(params) != (neededParams - 1) {
-		return nil, jsonrpc2.ErrInvalidParams
+
+	var decodedParams []interface{}
+	for idx := 1; idx < neededParams; idx++ {
+		paramType := methodType.In(idx)
+
+		var paramValue reflect.Value
+		if paramType == reflect.TypeFor[spineapi.EntityRemoteInterface]() {
+			// convert between EntityRemoteInterface and EntityAddressType
+			paramValue = reflect.New(reflect.TypeFor[model.EntityAddressType]())
+		} else {
+			paramValue = reflect.New(paramType)
+		}
+
+		decodedParams = append(decodedParams, paramValue.Interface())
 	}
+
+	log.Printf("pre: decodedParams %#v", decodedParams)
+	if err := json.Unmarshal(params, &decodedParams); err != nil {
+		return nil, jsonrpc2.ErrParse
+	}
+	log.Printf("post: decodedParams %v", decodedParams)
 
 	methodParams := make([]reflect.Value, neededParams)
 	methodParams[0] = svc.rcvr
@@ -47,12 +66,17 @@ func (svc *methodProxy) Call(methodName string, params []interface{}) ([]reflect
 		paramType := methodType.In(dstIndex)
 		// i - 1 due to receiver offset
 		paramIndex := dstIndex - 1
-		paramValue := reflect.ValueOf(params[paramIndex])
 
-		if !paramValue.CanConvert(paramType) {
-			return nil, jsonrpc2.ErrInvalidParams
+		if paramType == reflect.TypeFor[spineapi.EntityRemoteInterface]() {
+			// convert between EntityRemoteInterface and EntityAddressType
+			address := decodedParams[paramIndex].(*model.EntityAddressType)
+			log.Printf("entityInterfaces: %v", remote.entityInterfaces)
+			log.Printf("address: %v", address)
+			log.Printf("map: %v", remote.entityInterfaces[fmt.Sprintf("%s", address)])
+			methodParams[dstIndex] = reflect.ValueOf(remote.entityInterfaces[fmt.Sprintf("%s", address)])
+		} else {
+			methodParams[dstIndex] = reflect.ValueOf(decodedParams[paramIndex]).Elem()
 		}
-		methodParams[dstIndex] = paramValue.Convert(paramType)
 	}
 
 	output := method.Func.Call(methodParams)
@@ -64,8 +88,9 @@ type Remote struct {
 	rpc     *jsonrpc2.Server
 	service *service.Service
 
-	connections    []*jsonrpc2.Connection
-	remoteServices []shipapi.RemoteService
+	connections      []*jsonrpc2.Connection
+	remoteServices   []shipapi.RemoteService
+	entityInterfaces map[string]spineapi.EntityRemoteInterface
 
 	rpcServices map[string]rpcService
 }
@@ -80,8 +105,9 @@ func (r Remote) LocalSKI() string {
 
 func NewRemote(configuration *api.Configuration) (*Remote, error) {
 	r := Remote{
-		connections:    []*jsonrpc2.Connection{},
-		remoteServices: []shipapi.RemoteService{},
+		connections:      []*jsonrpc2.Connection{},
+		remoteServices:   []shipapi.RemoteService{},
+		entityInterfaces: make(map[string]spineapi.EntityRemoteInterface),
 
 		rpcServices: make(map[string]rpcService),
 	}
@@ -203,12 +229,7 @@ func (r *Remote) handleRPC(ctx context.Context, req *jsonrpc2.Request) (interfac
 			return nil, jsonrpc2.ErrMethodNotFound
 		}
 
-		var params []interface{}
-		if err := json.Unmarshal(req.Params, &params); err != nil {
-			return nil, jsonrpc2.ErrParse
-		}
-
-		output, err := svc.Call(methodName, params)
+		output, err := svc.Call(r, methodName, req.Params)
 		if err != nil {
 			return nil, err
 		}
