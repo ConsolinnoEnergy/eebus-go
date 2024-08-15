@@ -2,6 +2,7 @@ package lpp
 
 import (
 	"sync"
+	"time"
 
 	"github.com/enbility/eebus-go/api"
 	features "github.com/enbility/eebus-go/features/client"
@@ -145,7 +146,10 @@ func (e *LPP) loadControlWriteCB(msg *spineapi.Message) {
 	e.pendingMux.Unlock()
 
 	// approve, because this is no request for this usecase
-	go e.ApproveOrDenyProductionLimit(*msg.RequestHeader.MsgCounter, true, "")
+	go func() {
+		time.Sleep(1 * time.Second)
+		e.ApproveOrDenyProductionLimit(*msg.RequestHeader.MsgCounter, true, "")
+	}()
 }
 
 func (e *LPP) AddFeatures() {
