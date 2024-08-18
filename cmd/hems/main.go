@@ -99,7 +99,30 @@ func (h *hems) run() {
 	h.myService.AddUseCase(h.uccslpc)
 	h.uccslpp = cslpp.NewLPP(localEntity, h.OnLPPEvent)
 	h.myService.AddUseCase(h.uccslpp)
-	h.uceglpc = eglpc.NewLPC(localEntity, nil)
+	h.uceglpc = eglpc.NewLPC(localEntity, func(ski string, device spineapi.DeviceRemoteInterface, entity spineapi.EntityRemoteInterface, event api.EventType) {
+		switch event {
+		case eglpc.UseCaseSupportUpdate:
+			for _, entity := range h.uceglpc.RemoteEntitiesScenarios() {
+				go func(entity spineapi.EntityRemoteInterface) {
+					// Sleep otherwise loadControlLimitDescriptionListData
+					// isn't available and WriteConsumptionLimit will return
+					// api.ErrDataNotAvailable
+					time.Sleep(1 * time.Second)
+
+					log.Printf("Sending limit of 5000W to %v", entity.Address())
+					_, err := h.uceglpc.WriteConsumptionLimit(entity,
+						ucapi.LoadLimit{Value: 5000, IsActive: true},
+						func(result model.ResultDataType) {
+							log.Printf("Result: %v", result)
+						})
+					if err != nil {
+						log.Printf("Error: %v", err)
+					}
+
+				}(entity.Entity)
+			}
+		}
+	})
 	h.myService.AddUseCase(h.uceglpc)
 	h.uceglpp = eglpp.NewLPP(localEntity, nil)
 	h.myService.AddUseCase(h.uceglpp)
