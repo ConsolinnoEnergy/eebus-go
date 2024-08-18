@@ -140,9 +140,7 @@ func (h *hems) run() {
 // Controllable System LPC Event Handler
 
 func (h *hems) OnLPCEvent(ski string, device spineapi.DeviceRemoteInterface, entity spineapi.EntityRemoteInterface, event api.EventType) {
-	if entity.EntityType() != model.EntityTypeTypeGridGuard {
-		return
-	}
+	log.Printf("OnLPCEvent: %v", event)
 
 	switch event {
 	case lpc.WriteApprovalRequired:
