@@ -70,6 +70,7 @@ func NewLPP(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCa
 		UseCaseSupportUpdate,
 		validActorTypes,
 		validEntityTypes,
+		false,
 	)
 
 	uc := &LPP{
