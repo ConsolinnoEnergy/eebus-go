@@ -211,9 +211,20 @@ func (r Remote) RemoteSKIDisconnected(service api.ServiceInterface, ski string) 
 
 func (r *Remote) VisibleRemoteServicesUpdated(service api.ServiceInterface, entries []shipapi.RemoteService) {
 	r.remoteServices = entries
+
+	for _, conn := range r.connections {
+		conn.Notify(context.Background(), "remote/VisibleRemoteServicesUpdated", entries)
+	}
 }
 
-func (r Remote) ServiceShipIDUpdate(ski string, shipdID string) {
+func (r Remote) ServiceShipIDUpdate(ski string, shipID string) {
+	params := make(map[string]interface{}, 2)
+	params["ski"] = ski
+	params["shipID"] = shipID
+
+	for _, conn := range r.connections {
+		conn.Notify(context.Background(), "remote/ServiceShipIDUpdate", params)
+	}
 }
 
 func (r Remote) ServicePairingDetailUpdate(ski string, detail *shipapi.ConnectionStateDetail) {
