@@ -15,6 +15,7 @@ import (
 	"github.com/enbility/eebus-go/api"
 	"github.com/enbility/eebus-go/usecases/cem/evcc"
 	"github.com/enbility/eebus-go/usecases/cem/evsecc"
+	cslpc "github.com/enbility/eebus-go/usecases/cs/lpc"
 	eglpc "github.com/enbility/eebus-go/usecases/eg/lpc"
 	"github.com/enbility/eebus-go/usecases/ma/mpc"
 	shipapi "github.com/enbility/ship-go/api"
@@ -107,6 +108,13 @@ func main() {
 	}
 
 	r, err := NewRemote(configuration)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = r.RegisterUseCase(model.EntityTypeTypeCEM, "CS-LPC", func(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCallback) api.UseCaseInterface {
+		return cslpc.NewLPC(localEntity, eventCB)
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
