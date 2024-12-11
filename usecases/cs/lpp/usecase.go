@@ -1,6 +1,7 @@
 package lpp
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/enbility/eebus-go/api"
@@ -175,103 +176,26 @@ func (e *LPP) loadControlWriteCB(msg *spineapi.Message) {
 
 func (e *LPP) AddFeatures() error {
 	// client features
-	_ = e.LocalEntity.GetOrAddFeature(model.FeatureTypeTypeDeviceDiagnosis, model.RoleTypeClient)
+	if f := e.LocalEntity.GetOrAddFeature(model.FeatureTypeTypeDeviceDiagnosis, model.RoleTypeClient); f == nil {
+		return errors.New("could not add feature: " + string(model.FeatureTypeTypeDeviceDiagnosis))
+	}
 
 	// server features
 	f := e.LocalEntity.GetOrAddFeature(model.FeatureTypeTypeLoadControl, model.RoleTypeServer)
+	if f == nil {
+		return errors.New("could not add feature: " + string(model.FeatureTypeTypeLoadControl))
+	}
 	f.AddFunctionType(model.FunctionTypeLoadControlLimitDescriptionListData, true, false)
 	f.AddFunctionType(model.FunctionTypeLoadControlLimitListData, true, true)
-	err := f.AddWriteApprovalCallback(e.loadControlWriteCB)
-	if err != nil {
-		return err
-	}
-
-	newLimitDesc := model.LoadControlLimitDescriptionDataType{
-		LimitType:      util.Ptr(model.LoadControlLimitTypeTypeSignDependentAbsValueLimit),
-		LimitCategory:  util.Ptr(model.LoadControlCategoryTypeObligation),
-		LimitDirection: util.Ptr(model.EnergyDirectionTypeProduce),
-		MeasurementId:  util.Ptr(model.MeasurementIdType(0)), // This is a fake Measurement ID, as there is no Electrical Connection server defined, it can't provide any meaningful. But KEO requires this to be set :(
-		Unit:           util.Ptr(model.UnitOfMeasurementTypeW),
-		ScopeType:      util.Ptr(model.ScopeTypeTypeActivePowerLimit),
-	}
-	if lc, err := server.NewLoadControl(e.LocalEntity); err == nil {
-		limitId := lc.AddLimitDescription(newLimitDesc)
-
-		newLimiData := []api.LoadControlLimitDataForID{
-			{
-				Data: model.LoadControlLimitDataType{
-					Value:             model.NewScaledNumberType(0),
-					IsLimitChangeable: util.Ptr(true),
-					IsLimitActive:     util.Ptr(false),
-				},
-				Id: *limitId,
-			},
-		}
-		_ = lc.UpdateLimitDataForIds(newLimiData)
-	} else {
-		return err
-	}
 
 	f = e.LocalEntity.GetOrAddFeature(model.FeatureTypeTypeDeviceConfiguration, model.RoleTypeServer)
+	if f == nil {
+		return errors.New("could not add feature: " + string(model.FeatureTypeTypeDeviceConfiguration))
+	}
 	f.AddFunctionType(model.FunctionTypeDeviceConfigurationKeyValueDescriptionListData, true, false)
 	f.AddFunctionType(model.FunctionTypeDeviceConfigurationKeyValueListData, true, true)
 
-	if dcs, err := server.NewDeviceConfiguration(e.LocalEntity); err == nil {
-		dcs.AddKeyValueDescription(
-			model.DeviceConfigurationKeyValueDescriptionDataType{
-				KeyName:   util.Ptr(model.DeviceConfigurationKeyNameTypeFailsafeProductionActivePowerLimit),
-				ValueType: util.Ptr(model.DeviceConfigurationKeyValueTypeTypeScaledNumber),
-				Unit:      util.Ptr(model.UnitOfMeasurementTypeW),
-			},
-		)
-
-		// only add if it doesn't exist yet
-		filter := model.DeviceConfigurationKeyValueDescriptionDataType{
-			KeyName: util.Ptr(model.DeviceConfigurationKeyNameTypeFailsafeDurationMinimum),
-		}
-		if data, err := dcs.GetKeyValueDescriptionsForFilter(filter); err == nil && len(data) == 0 {
-			dcs.AddKeyValueDescription(
-				model.DeviceConfigurationKeyValueDescriptionDataType{
-					KeyName:   util.Ptr(model.DeviceConfigurationKeyNameTypeFailsafeDurationMinimum),
-					ValueType: util.Ptr(model.DeviceConfigurationKeyValueTypeTypeDuration),
-				},
-			)
-		}
-
-		value := &model.DeviceConfigurationKeyValueValueType{
-			ScaledNumber: model.NewScaledNumberType(0),
-		}
-		err1 := dcs.UpdateKeyValueDataForFilter(
-			model.DeviceConfigurationKeyValueDataType{
-				Value:             value,
-				IsValueChangeable: util.Ptr(true),
-			},
-			nil,
-			model.DeviceConfigurationKeyValueDescriptionDataType{
-				KeyName: util.Ptr(model.DeviceConfigurationKeyNameTypeFailsafeProductionActivePowerLimit),
-			},
-		)
-		if err1 != nil {
-			return err1
-		}
-
-		value = &model.DeviceConfigurationKeyValueValueType{
-			Duration: model.NewDurationType(0),
-		}
-		err1 = dcs.UpdateKeyValueDataForFilter(
-			model.DeviceConfigurationKeyValueDataType{
-				Value:             value,
-				IsValueChangeable: util.Ptr(true),
-			},
-			nil,
-			model.DeviceConfigurationKeyValueDescriptionDataType{
-				KeyName: util.Ptr(model.DeviceConfigurationKeyNameTypeFailsafeDurationMinimum),
-			},
-		)
-		if err1 != nil {
-			return err1
-		}
-	} else {
+	if err := f.AddWriteApprovalCallback(e.loadControlWriteCB); err != nil {
 		return err
 	}
 
@@ -281,22 +205,109 @@ func (e *LPP) AddFeatures() error {
 	f = e.LocalEntity.GetOrAddFeature(model.FeatureTypeTypeElectricalConnection, model.RoleTypeServer)
 	f.AddFunctionType(model.FunctionTypeElectricalConnectionCharacteristicListData, true, false)
 
-	if ec, err := server.NewElectricalConnection(e.LocalEntity); err == nil {
-		// ElectricalConnectionId and ParameterId should be identical to the ones used
-		// in a MPC Server role implementation, which is not done here (yet)
-		newCharData := model.ElectricalConnectionCharacteristicDataType{
-			ElectricalConnectionId: util.Ptr(model.ElectricalConnectionIdType(0)),
-			ParameterId:            util.Ptr(model.ElectricalConnectionParameterIdType(0)),
-			CharacteristicContext:  util.Ptr(model.ElectricalConnectionCharacteristicContextTypeEntity),
-			CharacteristicType:     util.Ptr(e.characteristicType()),
-			Unit:                   util.Ptr(model.UnitOfMeasurementTypeW),
-		}
-		_, err1 := ec.AddCharacteristic(newCharData)
-		if err1 != nil {
-			return err1
-		}
-	} else {
+	newLimitDesc := model.LoadControlLimitDescriptionDataType{
+		LimitType:      util.Ptr(model.LoadControlLimitTypeTypeSignDependentAbsValueLimit),
+		LimitCategory:  util.Ptr(model.LoadControlCategoryTypeObligation),
+		LimitDirection: util.Ptr(model.EnergyDirectionTypeProduce),
+		MeasurementId:  util.Ptr(model.MeasurementIdType(0)), // This is a fake Measurement ID, as there is no Electrical Connection server defined, it can't provide any meaningful. But KEO requires this to be set :(
+		Unit:           util.Ptr(model.UnitOfMeasurementTypeW),
+		ScopeType:      util.Ptr(model.ScopeTypeTypeActivePowerLimit),
+	}
+	lc, err := server.NewLoadControl(e.LocalEntity)
+	if err != nil {
 		return err
+	}
+	limitId := lc.AddLimitDescription(newLimitDesc)
+
+	newLimiData := []api.LoadControlLimitDataForID{
+		{
+			Data: model.LoadControlLimitDataType{
+				Value:             model.NewScaledNumberType(0),
+				IsLimitChangeable: util.Ptr(true),
+				IsLimitActive:     util.Ptr(false),
+			},
+			Id: *limitId,
+		},
+	}
+	if err = lc.UpdateLimitDataForIds(newLimiData); err != nil {
+		return err
+	}
+
+	dcs, err := server.NewDeviceConfiguration(e.LocalEntity)
+	if err != nil {
+		return err
+	}
+
+	dcs.AddKeyValueDescription(
+		model.DeviceConfigurationKeyValueDescriptionDataType{
+			KeyName:   util.Ptr(model.DeviceConfigurationKeyNameTypeFailsafeProductionActivePowerLimit),
+			ValueType: util.Ptr(model.DeviceConfigurationKeyValueTypeTypeScaledNumber),
+			Unit:      util.Ptr(model.UnitOfMeasurementTypeW),
+		},
+	)
+
+	// only add if it doesn't exist yet
+	filter := model.DeviceConfigurationKeyValueDescriptionDataType{
+		KeyName: util.Ptr(model.DeviceConfigurationKeyNameTypeFailsafeDurationMinimum),
+	}
+	if data, err := dcs.GetKeyValueDescriptionsForFilter(filter); err == nil && len(data) == 0 {
+		dcs.AddKeyValueDescription(
+			model.DeviceConfigurationKeyValueDescriptionDataType{
+				KeyName:   util.Ptr(model.DeviceConfigurationKeyNameTypeFailsafeDurationMinimum),
+				ValueType: util.Ptr(model.DeviceConfigurationKeyValueTypeTypeDuration),
+			},
+		)
+	}
+
+	value := &model.DeviceConfigurationKeyValueValueType{
+		ScaledNumber: model.NewScaledNumberType(0),
+	}
+	if err := dcs.UpdateKeyValueDataForFilter(
+		model.DeviceConfigurationKeyValueDataType{
+			Value:             value,
+			IsValueChangeable: util.Ptr(true),
+		},
+		nil,
+		model.DeviceConfigurationKeyValueDescriptionDataType{
+			KeyName: util.Ptr(model.DeviceConfigurationKeyNameTypeFailsafeProductionActivePowerLimit),
+		},
+	); err != nil {
+		return err
+	}
+
+	value = &model.DeviceConfigurationKeyValueValueType{
+		Duration: model.NewDurationType(0),
+	}
+	if err := dcs.UpdateKeyValueDataForFilter(
+		model.DeviceConfigurationKeyValueDataType{
+			Value:             value,
+			IsValueChangeable: util.Ptr(true),
+		},
+		nil,
+		model.DeviceConfigurationKeyValueDescriptionDataType{
+			KeyName: util.Ptr(model.DeviceConfigurationKeyNameTypeFailsafeDurationMinimum),
+		},
+	); err != nil {
+		return err
+	}
+
+	ec, err := server.NewElectricalConnection(e.LocalEntity)
+	if err != nil {
+		return err
+	}
+
+	// ElectricalConnectionId and ParameterId should be identical to the ones used
+	// in an MPC Server role implementation, which is not done here (yet)
+	newCharData := model.ElectricalConnectionCharacteristicDataType{
+		ElectricalConnectionId: util.Ptr(model.ElectricalConnectionIdType(0)),
+		ParameterId:            util.Ptr(model.ElectricalConnectionParameterIdType(0)),
+		CharacteristicContext:  util.Ptr(model.ElectricalConnectionCharacteristicContextTypeEntity),
+		CharacteristicType:     util.Ptr(e.characteristicType()),
+		Unit:                   util.Ptr(model.UnitOfMeasurementTypeW),
+	}
+	_, err1 := ec.AddCharacteristic(newCharData)
+	if err1 != nil {
+		return err1
 	}
 
 	return nil
