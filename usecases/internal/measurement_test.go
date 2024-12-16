@@ -114,7 +114,7 @@ func (s *InternalSuite) Test_MeasurementPhaseSpecificDataForFilter() {
 		ucapi.PhaseNameMapping,
 	)
 	assert.Nil(s.T(), err)
-	assert.Equal(s.T(), 0, len(data))
+	assert.Equal(s.T(), []float64{0, 0, 0}, data)
 
 	elParamData := &model.ElectricalConnectionParameterDescriptionListDataType{
 		ElectricalConnectionParameterDescriptionData: []model.ElectricalConnectionParameterDescriptionDataType{
