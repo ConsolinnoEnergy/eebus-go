@@ -88,19 +88,22 @@ func (e *MPC) EnergyConsumed(entity spineapi.EntityRemoteInterface) (float64, er
 		return 0, api.ErrDataNotAvailable
 	}
 
-	// we assume thre is only one result
-	value := values[0].Value
-	if value == nil {
+	hasValue := false
+	for _, value := range values {
+		if value.Value != nil {
+			hasValue = true
+			// if the value state is set and not normal, the value is not valid and should be ignored
+			if value.ValueState != nil && *value.ValueState == model.MeasurementValueStateTypeNormal {
+				return value.Value.GetValue(), nil
+			}
+		}
+	}
+
+	if !hasValue {
 		return 0, api.ErrDataNotAvailable
 	}
-
-	// if the value state is set and not normal, the value is not valid and should be ignored
-	// therefore we return an error
-	if values[0].ValueState != nil && *values[0].ValueState != model.MeasurementValueStateTypeNormal {
-		return 0, api.ErrDataInvalid
-	}
-
-	return value.GetValue(), nil
+	// a value was found, but that value is invalid
+	return 0, api.ErrDataInvalid
 }
 
 // return the total feed in energy
@@ -131,19 +134,22 @@ func (e *MPC) EnergyProduced(entity spineapi.EntityRemoteInterface) (float64, er
 		return 0, api.ErrDataNotAvailable
 	}
 
-	// we assume thre is only one result
-	value := values[0].Value
-	if value == nil {
+	hasValue := false
+	for _, value := range values {
+		if value.Value != nil {
+			hasValue = true
+			// if the value state is set and not normal, the value is not valid and should be ignored
+			if value.ValueState != nil && *value.ValueState == model.MeasurementValueStateTypeNormal {
+				return value.Value.GetValue(), nil
+			}
+		}
+	}
+
+	if !hasValue {
 		return 0, api.ErrDataNotAvailable
 	}
-
-	// if the value state is set and not normal, the value is not valid and should be ignored
-	// therefore we return an error
-	if values[0].ValueState != nil && *values[0].ValueState != model.MeasurementValueStateTypeNormal {
-		return 0, api.ErrDataInvalid
-	}
-
-	return value.GetValue(), nil
+	// a value was found, but that value is invalid
+	return 0, api.ErrDataInvalid
 }
 
 // Scenario 3
