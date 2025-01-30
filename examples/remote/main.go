@@ -18,9 +18,11 @@ import (
 	cslpc "github.com/enbility/eebus-go/usecases/cs/lpc"
 	cslpp "github.com/enbility/eebus-go/usecases/cs/lpp"
 	eglpc "github.com/enbility/eebus-go/usecases/eg/lpc"
-	"github.com/enbility/eebus-go/usecases/ma/mpc"
+	mampc "github.com/enbility/eebus-go/usecases/ma/mpc"
+	mumpc "github.com/enbility/eebus-go/usecases/mu/mpc"
 	shipapi "github.com/enbility/ship-go/api"
 	"github.com/enbility/ship-go/cert"
+	"github.com/enbility/ship-go/util"
 	spineapi "github.com/enbility/spine-go/api"
 	"github.com/enbility/spine-go/model"
 )
@@ -85,7 +87,7 @@ func main() {
 		},
 		model.DeviceTypeTypeEnergyManagementSystem,
 		[]model.EntityTypeType{
-			model.EntityTypeTypeGridGuard,
+			model.EntityTypeTypeEVSE,
 			model.EntityTypeTypeCEM,
 		},
 		23292, certificate, time.Second*4)
@@ -113,7 +115,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = r.RegisterUseCase(model.EntityTypeTypeCEM, "CS-LPC", func(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCallback) api.UseCaseInterface {
+	err = r.RegisterUseCase(model.EntityTypeTypeEVSE, "CS-LPC", func(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCallback) api.UseCaseInterface {
 		return cslpc.NewLPC(localEntity, eventCB)
 	})
 	if err != nil {
@@ -135,7 +137,42 @@ func main() {
 	}
 
 	err = r.RegisterUseCase(model.EntityTypeTypeCEM, "MA-MPC", func(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCallback) api.UseCaseInterface {
-		return mpc.NewMPC(localEntity, eventCB)
+		return mampc.NewMPC(localEntity, eventCB)
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = r.RegisterUseCase(model.EntityTypeTypeEVSE, "EVSE-MPC", func(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCallback) api.UseCaseInterface {
+		uc, err := mumpc.NewMPC(localEntity, eventCB,
+			util.Ptr(mumpc.MonitorPowerConfig{
+				ConnectedPhases:   mumpc.ConnectedPhasesABC,
+				ValueSourceTotal:  util.Ptr(model.MeasurementValueSourceTypeMeasuredValue),
+				ValueSourcePhaseA: util.Ptr(model.MeasurementValueSourceTypeMeasuredValue),
+				ValueSourcePhaseB: util.Ptr(model.MeasurementValueSourceTypeMeasuredValue),
+				ValueSourcePhaseC: util.Ptr(model.MeasurementValueSourceTypeMeasuredValue),
+			}),
+			util.Ptr(mumpc.MonitorEnergyConfig{
+				ValueSourceConsumption: util.Ptr(model.MeasurementValueSourceTypeMeasuredValue),
+			}),
+			util.Ptr(mumpc.MonitorCurrentConfig{
+				ValueSourcePhaseA: util.Ptr(model.MeasurementValueSourceTypeMeasuredValue),
+				ValueSourcePhaseB: util.Ptr(model.MeasurementValueSourceTypeMeasuredValue),
+				ValueSourcePhaseC: util.Ptr(model.MeasurementValueSourceTypeMeasuredValue),
+			}),
+			util.Ptr(mumpc.MonitorVoltageConfig{
+				ValueSourcePhaseA: util.Ptr(model.MeasurementValueSourceTypeMeasuredValue),
+				ValueSourcePhaseB: util.Ptr(model.MeasurementValueSourceTypeMeasuredValue),
+				ValueSourcePhaseC: util.Ptr(model.MeasurementValueSourceTypeMeasuredValue),
+			}),
+			util.Ptr(mumpc.MonitorFrequencyConfig{
+				ValueSource: util.Ptr(model.MeasurementValueSourceTypeMeasuredValue),
+			}),
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return uc
 	})
 	if err != nil {
 		log.Fatal(err)

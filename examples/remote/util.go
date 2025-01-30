@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"go/token"
@@ -13,6 +14,7 @@ import (
 	"github.com/enbility/spine-go/api"
 	spineapi "github.com/enbility/spine-go/api"
 	"github.com/enbility/spine-go/model"
+	"golang.org/x/exp/jsonrpc2"
 )
 
 // Is this type exported or a builtin?
@@ -33,6 +35,98 @@ func errorAsJson(v reflect.Value) interface{} {
 	} else {
 		return v.Interface().(error).Error()
 	}
+}
+
+func decodeVariadicFunctionArgument(paramType reflect.Type, params []json.RawMessage, decodedParams []interface{}) ([]interface{}, error) {
+	var err error
+
+	paramType = paramType.Elem()
+	for _, param := range params {
+		decodedParams, err = decodeFunctionArgument(paramType, param, decodedParams)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return decodedParams, nil
+}
+
+func decodeFunctionArgument(paramType reflect.Type, param json.RawMessage, decodedParams []interface{}) ([]interface{}, error) {
+	var paramValue reflect.Value
+	if paramType == reflect.TypeFor[spineapi.DeviceRemoteInterface]() {
+		// convert between DeviceRemoteInterface and DeviceAddressType
+		paramValue = reflect.New(reflect.TypeFor[model.DeviceAddressType]())
+	} else if paramType == reflect.TypeFor[spineapi.EntityRemoteInterface]() {
+		// convert between EntityRemoteInterface and EntityAddressType
+		paramValue = reflect.New(reflect.TypeFor[model.EntityAddressType]())
+	} else {
+		paramValue = reflect.New(paramType)
+	}
+
+	decodedParam := paramValue.Interface()
+	if err := json.Unmarshal(param, &decodedParam); err != nil {
+		return nil, jsonrpc2.ErrParse
+	}
+	decodedParams = append(decodedParams, decodedParam)
+
+	return decodedParams, nil
+
+}
+
+func transformVariadicFunctionArgument(remote *Remote, paramType reflect.Type, params []interface{}, methodParams []reflect.Value) ([]reflect.Value, error) {
+	var err error
+
+	paramType = paramType.Elem()
+	for _, param := range params {
+		methodParams, err = transformFunctionArgument(remote, paramType, param, methodParams)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return methodParams, nil
+}
+
+func transformFunctionArgument(remote *Remote, paramType reflect.Type, param interface{}, methodParams []reflect.Value) ([]reflect.Value, error) {
+	if paramType == reflect.TypeFor[spineapi.DeviceRemoteInterface]() {
+		// convert between DeviceRemoteInterface and DeviceAddressType
+		address, ok := param.(*model.DeviceAddressType)
+		if !ok || address.Device == nil {
+			return nil, jsonrpc2.ErrInvalidParams
+		}
+
+		deviceInterface := remote.service.LocalDevice().RemoteDeviceForAddress(*address.Device)
+		if deviceInterface == nil {
+			return nil, jsonrpc2.ErrInvalidParams
+		}
+
+		methodParams = append(methodParams, reflect.ValueOf(deviceInterface))
+	} else if paramType == reflect.TypeFor[spineapi.EntityRemoteInterface]() {
+		// convert between EntityRemoteInterface and EntityAddressType
+		address, ok := param.(*model.EntityAddressType)
+		if !ok || address.Device == nil {
+			return nil, jsonrpc2.ErrInvalidParams
+		}
+
+		deviceInterface := remote.service.LocalDevice().RemoteDeviceForAddress(*address.Device)
+		if deviceInterface == nil {
+			return nil, jsonrpc2.ErrInvalidParams
+		}
+
+		entityInterface := deviceInterface.Entity(address.Entity)
+		if entityInterface == nil {
+			return nil, jsonrpc2.ErrInvalidParams
+		}
+
+		methodParams = append(methodParams, reflect.ValueOf(entityInterface))
+	} else if param == nil {
+		// some parameters are optional and allowed to be nil
+		methodParams = append(methodParams, reflect.New(paramType).Elem())
+	} else {
+		methodParams = append(methodParams, reflect.ValueOf(param).Elem())
+	}
+
+	return methodParams, nil
 }
 
 func transformReturnValues(values []reflect.Value) []interface{} {

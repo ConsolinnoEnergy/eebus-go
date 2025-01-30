@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"strings"
 
-	spineapi "github.com/enbility/spine-go/api"
 	"github.com/enbility/spine-go/model"
 	"golang.org/x/exp/jsonrpc2"
 )
@@ -21,8 +20,9 @@ type rpcServiceFunc interface {
 func callMethod(remote *Remote, methodName string, method reflect.Value, params []json.RawMessage) ([]interface{}, error) {
 	methodType := method.Type()
 	neededParams := methodType.NumIn()
+	isVariadic := methodType.IsVariadic()
 
-	if len(params) != neededParams {
+	if len(params) < neededParams || (!isVariadic && len(params) > neededParams) {
 		return nil, jsonrpc2.ErrInvalidParams
 	}
 
@@ -30,71 +30,40 @@ func callMethod(remote *Remote, methodName string, method reflect.Value, params 
 	for idx := 0; idx < neededParams; idx++ {
 		paramType := methodType.In(idx)
 
-		var paramValue reflect.Value
-		if paramType == reflect.TypeFor[spineapi.DeviceRemoteInterface]() {
-			// convert between DeviceRemoteInterface and DeviceAddressType
-			paramValue = reflect.New(reflect.TypeFor[model.DeviceAddressType]())
-		} else if paramType == reflect.TypeFor[spineapi.EntityRemoteInterface]() {
-			// convert between EntityRemoteInterface and EntityAddressType
-			paramValue = reflect.New(reflect.TypeFor[model.EntityAddressType]())
+		var err error
+		if isVariadic && idx == neededParams-1 {
+			decodedParams, err = decodeVariadicFunctionArgument(paramType, params[idx:], decodedParams)
 		} else {
-			paramValue = reflect.New(paramType)
+			decodedParams, err = decodeFunctionArgument(paramType, params[idx], decodedParams)
 		}
 
-		param := paramValue.Interface()
-		if err := json.Unmarshal(params[idx], &param); err != nil {
-			return nil, jsonrpc2.ErrParse
+		if err != nil {
+			return nil, err
 		}
-		decodedParams = append(decodedParams, param)
+
 	}
 	log.Printf("decoded: %v(%v)", methodName, decodedParams)
 
-	if len(decodedParams) != neededParams {
+	if len(decodedParams) < neededParams || (!isVariadic && len(decodedParams) > neededParams) {
 		return nil, jsonrpc2.ErrInvalidParams
 	}
 
-	methodParams := make([]reflect.Value, neededParams)
+	var methodParams []reflect.Value
 	for dstIndex := 0; dstIndex < neededParams; dstIndex++ {
 		paramType := methodType.In(dstIndex)
 		paramIndex := dstIndex
 
-		if paramType == reflect.TypeFor[spineapi.DeviceRemoteInterface]() {
-			// convert between DeviceRemoteInterface and DeviceAddressType
-			address, ok := decodedParams[paramIndex].(*model.DeviceAddressType)
-			if !ok || address.Device == nil {
-				return nil, jsonrpc2.ErrInvalidParams
-			}
-
-			deviceInterface := remote.service.LocalDevice().RemoteDeviceForAddress(*address.Device)
-			if deviceInterface == nil {
-				return nil, jsonrpc2.ErrInvalidParams
-			}
-
-			methodParams[dstIndex] = reflect.ValueOf(deviceInterface)
-		} else if paramType == reflect.TypeFor[spineapi.EntityRemoteInterface]() {
-			// convert between EntityRemoteInterface and EntityAddressType
-			address, ok := decodedParams[paramIndex].(*model.EntityAddressType)
-			if !ok || address.Device == nil {
-				return nil, jsonrpc2.ErrInvalidParams
-			}
-
-			deviceInterface := remote.service.LocalDevice().RemoteDeviceForAddress(*address.Device)
-			if deviceInterface == nil {
-				return nil, jsonrpc2.ErrInvalidParams
-			}
-
-			entityInterface := deviceInterface.Entity(address.Entity)
-			if entityInterface == nil {
-				return nil, jsonrpc2.ErrInvalidParams
-			}
-
-			methodParams[dstIndex] = reflect.ValueOf(entityInterface)
-		} else if decodedParams[paramIndex] == nil {
-			// some parameters are optional and allowed to be nil
-			methodParams[dstIndex] = reflect.New(paramType).Elem()
+		var err error
+		if isVariadic && dstIndex == neededParams-1 {
+			methodParams, err = transformVariadicFunctionArgument(remote, paramType, decodedParams[paramIndex:], methodParams)
 		} else {
-			methodParams[dstIndex] = reflect.ValueOf(decodedParams[paramIndex]).Elem()
+			methodParams, err = transformFunctionArgument(remote, paramType, decodedParams[paramIndex], methodParams)
 		}
+
+		if err != nil {
+			return nil, err
+		}
+
 	}
 
 	output := method.Call(methodParams)
