@@ -115,7 +115,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = r.RegisterUseCase(model.EntityTypeTypeEVSE, "CS-LPC", func(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCallback) api.UseCaseInterface {
+	err = r.RegisterUseCase(model.EntityTypeTypeCEM, "CS-LPC", func(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCallback) api.UseCaseInterface {
 		return cslpc.NewLPC(localEntity, eventCB)
 	})
 	if err != nil {
