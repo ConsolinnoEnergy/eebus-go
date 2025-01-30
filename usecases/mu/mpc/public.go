@@ -157,7 +157,7 @@ func (e *MPC) Frequency() (float64, error) {
 // possible errors:
 //   - ErrMissingData if the id is not available
 //   - and others
-func (e *MPC) Update(updateData ...usecaseapi.UpdateMeasurementData) error {
+func (e *MPC) Update(updateData ...UpdateData) error {
 	measurements, err := server.NewMeasurement(e.LocalEntity)
 	if err != nil {
 		return err
