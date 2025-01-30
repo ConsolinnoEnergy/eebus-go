@@ -1,6 +1,7 @@
 package oscev
 
 import (
+	"errors"
 	"github.com/enbility/eebus-go/api"
 	ucapi "github.com/enbility/eebus-go/usecases/api"
 	"github.com/enbility/eebus-go/usecases/usecase"
@@ -58,6 +59,7 @@ func NewOSCEV(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEvent
 		UseCaseSupportUpdate,
 		validActorTypes,
 		validEntityTypes,
+		false,
 	)
 
 	uc := &OSCEV{
@@ -69,18 +71,26 @@ func NewOSCEV(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEvent
 	return uc
 }
 
-func (e *OSCEV) AddFeatures() {
+func (e *OSCEV) AddFeatures() error {
 	// client features
 	var clientFeatures = []model.FeatureTypeType{
 		model.FeatureTypeTypeLoadControl,
 		model.FeatureTypeTypeElectricalConnection,
 	}
 	for _, feature := range clientFeatures {
-		_ = e.LocalEntity.GetOrAddFeature(feature, model.RoleTypeClient)
+		if f := e.LocalEntity.GetOrAddFeature(feature, model.RoleTypeClient); f == nil {
+			return errors.New("could not add feature: " + string(feature))
+		}
 	}
 
 	// server features
 	f := e.LocalEntity.GetOrAddFeature(model.FeatureTypeTypeDeviceDiagnosis, model.RoleTypeServer)
+	if f == nil {
+		return errors.New("could not add feature: " + string(model.FeatureTypeTypeDeviceDiagnosis))
+	}
+
 	f.AddFunctionType(model.FunctionTypeDeviceDiagnosisStateData, true, false)
 	f.AddFunctionType(model.FunctionTypeDeviceDiagnosisHeartbeatData, true, false)
+
+	return nil
 }

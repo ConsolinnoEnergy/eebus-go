@@ -1,6 +1,7 @@
 package lpp
 
 import (
+	"errors"
 	"github.com/enbility/eebus-go/api"
 	ucapi "github.com/enbility/eebus-go/usecases/api"
 	"github.com/enbility/eebus-go/usecases/usecase"
@@ -63,7 +64,9 @@ func NewLPP(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCa
 		eventCB,
 		UseCaseSupportUpdate,
 		validActorTypes,
-		validEntityTypes)
+		validEntityTypes,
+		false,
+	)
 
 	uc := &LPP{
 		UseCaseBase: usecase,
@@ -74,7 +77,7 @@ func NewLPP(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCa
 	return uc
 }
 
-func (e *LPP) AddFeatures() {
+func (e *LPP) AddFeatures() error {
 	// client features
 	var clientFeatures = []model.FeatureTypeType{
 		model.FeatureTypeTypeDeviceDiagnosis,
@@ -83,12 +86,19 @@ func (e *LPP) AddFeatures() {
 		model.FeatureTypeTypeElectricalConnection,
 	}
 	for _, feature := range clientFeatures {
-		_ = e.LocalEntity.GetOrAddFeature(feature, model.RoleTypeClient)
+		if f := e.LocalEntity.GetOrAddFeature(feature, model.RoleTypeClient); f == nil {
+			return errors.New("could not add feature: " + string(feature))
+		}
 	}
 
 	// server features
 	f := e.LocalEntity.GetOrAddFeature(model.FeatureTypeTypeDeviceDiagnosis, model.RoleTypeServer)
+	if f == nil {
+		return errors.New("could not add feature: " + string(model.FeatureTypeTypeDeviceDiagnosis))
+	}
 	f.AddFunctionType(model.FunctionTypeDeviceDiagnosisHeartbeatData, true, false)
+
+	return nil
 }
 
 func (e *LPP) UpdateUseCaseAvailability(available bool) {

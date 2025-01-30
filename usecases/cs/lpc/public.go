@@ -360,13 +360,13 @@ func (e *LPC) SetConsumptionNominalMax(value float64) error {
 
 // returns the characteristictype depending on the local entities device devicetype
 func (e *LPC) characteristicType() model.ElectricalConnectionCharacteristicTypeType {
-	deviceType := e.LocalEntity.Device().DeviceType()
+	entityType := e.LocalEntity.EntityType()
 
 	// According to LPC V1.0 2.2, lines 400ff:
 	// - a HEMS provides contractual consumption nominal max
 	// - any other devices provides power consupmtion nominal max
 	characteristic := model.ElectricalConnectionCharacteristicTypeTypePowerConsumptionNominalMax
-	if deviceType == nil || *deviceType == model.DeviceTypeTypeEnergyManagementSystem {
+	if entityType == "" || entityType == model.EntityTypeTypeCEM {
 		characteristic = model.ElectricalConnectionCharacteristicTypeTypeContractualConsumptionNominalMax
 	}
 

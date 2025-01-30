@@ -193,11 +193,23 @@ func (s *Service) IsRunning() bool {
 }
 
 // add a use case to the service
-func (s *Service) AddUseCase(useCase api.UseCaseInterface) {
+//
+// returns an error when adding features to the entity fails
+//
+// errors should not occur during normal usage of eebus-go, and should
+// generally be considered fatal implementation errors
+//
+// see usecase.AddFeatures() for more information
+func (s *Service) AddUseCase(useCase api.UseCaseInterface) error {
 	s.usecases = append(s.usecases, useCase)
 
-	useCase.AddFeatures()
+	err := useCase.AddFeatures()
+	if err != nil {
+		return err
+	}
 	useCase.AddUseCase()
+
+	return nil
 }
 
 func (s *Service) Configuration() *api.Configuration {
