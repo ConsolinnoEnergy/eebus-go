@@ -38,3 +38,5 @@ retract (
 	v0.2.2 // Contains retractions only.
 	v0.2.1 // Published accidentally.
 )
+
+replace github.com/enbility/spine-go => github.com/ConsolinnoEnergy/spine-go v0.0.0-20250214124003-58694ac50f36
