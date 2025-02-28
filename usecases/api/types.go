@@ -172,3 +172,14 @@ type PendingDeviceConfiguration struct {
 	Value             *model.DeviceConfigurationKeyValueValueType           `json:"value,omitempty"`
 	IsValueChangeable *bool                                                 `json:"isValueChangeable,omitempty" eebus:"writecheck"`
 }
+
+type CompressorPowerConsumptionStateType string
+
+const (
+	CompressorPowerConsumptionStateAvailable CompressorPowerConsumptionStateType = "available"
+	CompressorPowerConsumptionStateScheduled CompressorPowerConsumptionStateType = "scheduled"
+	CompressorPowerConsumptionStateRunning   CompressorPowerConsumptionStateType = "running"
+	CompressorPowerConsumptionStatePaused    CompressorPowerConsumptionStateType = "paused"
+	CompressorPowerConsumptionStateCompleted CompressorPowerConsumptionStateType = "completed"
+	CompressorPowerConsumptionStateStopped   CompressorPowerConsumptionStateType = "stopped" // (aborted)
+)
