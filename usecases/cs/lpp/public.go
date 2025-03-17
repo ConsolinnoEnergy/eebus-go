@@ -267,6 +267,60 @@ func (e *LPP) SetFailsafeDurationMinimum(duration time.Duration, changeable bool
 	return dc.UpdateKeyValueDataForFilter(data, nil, filter)
 }
 
+// return the currently pending incoming failsafe consumption limit writes
+func (e *LPP) PendingDeviceConfigurations() map[model.MsgCounterType][]ucapi.PendingDeviceConfiguration {
+	result := make(map[model.MsgCounterType][]ucapi.PendingDeviceConfiguration)
+
+	e.pendingDeviceConfigMux.Lock()
+	defer e.pendingDeviceConfigMux.Unlock()
+
+	dc, err := server.NewDeviceConfiguration(e.LocalEntity)
+	if err != nil {
+		return result
+	}
+
+	for msgCounter, msg := range e.pendingDeviceConfigs {
+		data := msg.Cmd.DeviceConfigurationKeyValueListData
+		for _, configKeyValueData := range data.DeviceConfigurationKeyValueData {
+			description, err := dc.GetKeyValueDescriptionFoKeyId(*configKeyValueData.KeyId)
+			if err != nil {
+				continue
+			}
+
+			pendingConfigData := ucapi.PendingDeviceConfiguration{
+				Description:       description,
+				Value:             configKeyValueData.Value,
+				IsValueChangeable: configKeyValueData.IsValueChangeable,
+			}
+
+			if _, exists := result[msgCounter]; !exists {
+				result[msgCounter] = []ucapi.PendingDeviceConfiguration{pendingConfigData}
+			} else {
+				result[msgCounter] = append(result[msgCounter], pendingConfigData)
+			}
+		}
+	}
+	return result
+}
+
+// accept or deny an incoming device configuration write
+//
+// use PendingDeviceConfigurations to get the list of currently pending requests
+func (e *LPP) ApproveOrDenyDeviceConfiguration(msgCounter model.MsgCounterType, approve bool, reason string) {
+	e.pendingDeviceConfigMux.Lock()
+	defer e.pendingDeviceConfigMux.Unlock()
+
+	msg, ok := e.pendingDeviceConfigs[msgCounter]
+	if !ok {
+		// no pending limit for this msgCounter, this is a caller error
+		return
+	}
+
+	e.approveOrDenyDeviceConfiguration(msg, approve, reason)
+
+	delete(e.pendingDeviceConfigs, msgCounter)
+}
+
 // Scenario 3
 
 // start sending heartbeat from the local entity supporting this usecase

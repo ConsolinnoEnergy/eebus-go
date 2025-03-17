@@ -152,11 +152,20 @@ func (h *hems) OnLPCEvent(ski string, device spineapi.DeviceRemoteInterface, ent
 	case cslpc.WriteApprovalRequired:
 		// get pending writes
 		pendingWrites := h.uccslpc.PendingConsumptionLimits()
+		pendingDeviceConfigWrites := h.uccslpc.PendingDeviceConfigurations()
 
 		// approve any write
 		for msgCounter, write := range pendingWrites {
-			fmt.Println("Approving LPC write with msgCounter", msgCounter, "and limit", write.Value, "W")
+			fmt.Println("Approving LPC limit write with msgCounter", msgCounter, "and limit", write.Value, "W")
 			h.uccslpc.ApproveOrDenyConsumptionLimit(msgCounter, true, "")
+		}
+		for msgCounter, configs := range pendingDeviceConfigWrites {
+			fmt.Printf("Approving LPC device config write with msgCounter %d for features: ", msgCounter)
+			for _, config := range configs {
+				fmt.Printf("%s ", *config.Description.KeyName)
+			}
+			fmt.Print("\n")
+			h.uccslpc.ApproveOrDenyDeviceConfiguration(msgCounter, true, "")
 		}
 	case cslpc.DataUpdateLimit:
 		if currentLimit, err := h.uccslpc.ConsumptionLimit(); err == nil {
@@ -172,11 +181,20 @@ func (h *hems) OnLPPEvent(ski string, device spineapi.DeviceRemoteInterface, ent
 	case cslpp.WriteApprovalRequired:
 		// get pending writes
 		pendingWrites := h.uccslpp.PendingProductionLimits()
+		pendingDeviceConfigWrites := h.uccslpp.PendingDeviceConfigurations()
 
 		// approve any write
 		for msgCounter, write := range pendingWrites {
-			fmt.Println("Approving LPP write with msgCounter", msgCounter, "and limit", write.Value, "W")
+			fmt.Println("Approving LPP limit write with msgCounter", msgCounter, "and limit", write.Value, "W")
 			h.uccslpp.ApproveOrDenyProductionLimit(msgCounter, true, "")
+		}
+		for msgCounter, configs := range pendingDeviceConfigWrites {
+			fmt.Printf("Approving LPP device config write with msgCounter %d for features: ", msgCounter)
+			for _, config := range configs {
+				fmt.Printf("%s ", *config.Description.KeyName)
+			}
+			fmt.Print("\n")
+			h.uccslpp.ApproveOrDenyDeviceConfiguration(msgCounter, true, "")
 		}
 	case cslpp.DataUpdateLimit:
 		if currentLimit, err := h.uccslpp.ProductionLimit(); err == nil {

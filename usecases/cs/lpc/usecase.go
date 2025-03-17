@@ -1,6 +1,7 @@
 package lpc
 
 import (
+	"slices"
 	"sync"
 
 	"github.com/enbility/eebus-go/api"
@@ -20,6 +21,9 @@ type LPC struct {
 
 	pendingMux    sync.Mutex
 	pendingLimits map[model.MsgCounterType]*spineapi.Message
+
+	pendingDeviceConfigMux sync.Mutex
+	pendingDeviceConfigs   map[model.MsgCounterType]*spineapi.Message
 
 	heartbeatDiag *features.DeviceDiagnosis
 
@@ -74,8 +78,9 @@ func NewLPC(localEntity spineapi.EntityLocalInterface, eventCB api.EntityEventCa
 	)
 
 	uc := &LPC{
-		UseCaseBase:   usecase,
-		pendingLimits: make(map[model.MsgCounterType]*spineapi.Message),
+		UseCaseBase:          usecase,
+		pendingLimits:        make(map[model.MsgCounterType]*spineapi.Message),
+		pendingDeviceConfigs: make(map[model.MsgCounterType]*spineapi.Message),
 	}
 
 	_ = spine.Events.Subscribe(uc)
@@ -172,6 +177,80 @@ func (e *LPC) loadControlWriteCB(msg *spineapi.Message) {
 	go e.approveOrDenyConsumptionLimit(msg, true, "")
 }
 
+func (e *LPC) approveOrDenyDeviceConfiguration(msg *spineapi.Message, approve bool, reason string) {
+	f := e.LocalEntity.FeatureOfTypeAndRole(model.FeatureTypeTypeDeviceConfiguration, model.RoleTypeServer)
+
+	result := model.ErrorType{
+		ErrorNumber: model.ErrorNumberType(0),
+	}
+
+	if !approve {
+		result.ErrorNumber = model.ErrorNumberType(7)
+		result.Description = util.Ptr(model.DescriptionType(reason))
+	}
+
+	f.ApproveOrDenyWrite(msg, result)
+}
+
+// callback invoked on incoming write messages to this
+// DeviceConfiguration server feature.
+// the implementation only considers write messages for this use case and
+// approves all others
+func (e *LPC) deviceConfigurationWriteCB(msg *spineapi.Message) {
+	if msg.RequestHeader == nil || msg.RequestHeader.MsgCounter == nil ||
+		msg.Cmd.DeviceConfigurationKeyValueListData == nil {
+		logging.Log().Debug("LPC deviceConfigurationWriteCB: invalid message")
+		return
+	}
+
+	data := msg.Cmd.DeviceConfigurationKeyValueListData
+
+	if data == nil || data.DeviceConfigurationKeyValueData == nil || len(data.DeviceConfigurationKeyValueData) == 0 {
+		logging.Log().Debug("LPC deviceConfigurationWriteCB: no data")
+		return
+	}
+
+	// all DeviceConfigurationKeyValueData must have keyId set as primary identifier
+	if slices.ContainsFunc(data.DeviceConfigurationKeyValueData, func(i model.DeviceConfigurationKeyValueDataType) bool {
+		return i.KeyId == nil
+	}) {
+		logging.Log().Debug("LPC deviceConfigurationWriteCB: invalid message")
+		return
+	}
+
+	dc, err := server.NewDeviceConfiguration(e.LocalEntity)
+	if err != nil {
+		return
+	}
+
+	configsToApprove := map[model.DeviceConfigurationKeyNameType]struct{}{
+		model.DeviceConfigurationKeyNameTypeFailsafeConsumptionActivePowerLimit: {},
+		model.DeviceConfigurationKeyNameTypeFailsafeDurationMinimum:             {},
+	}
+	for _, deviceKeyValueData := range data.DeviceConfigurationKeyValueData {
+		description, err := dc.GetKeyValueDescriptionFoKeyId(*deviceKeyValueData.KeyId)
+		if description == nil || err != nil {
+			logging.Log().Debug("LPC deviceConfigurationWriteCB: no device configuration for KeyID %d found")
+			continue
+		}
+
+		// Only ask for write approval if at least one of the configurations we care about is trying to be set
+		if _, exists := configsToApprove[*description.KeyName]; exists {
+			e.pendingDeviceConfigMux.Lock()
+			if _, exists := e.pendingDeviceConfigs[*msg.RequestHeader.MsgCounter]; !exists {
+				e.pendingDeviceConfigs[*msg.RequestHeader.MsgCounter] = msg
+				e.pendingDeviceConfigMux.Unlock()
+				e.EventCB(msg.DeviceRemote.Ski(), msg.DeviceRemote, msg.EntityRemote, WriteApprovalRequired)
+				return
+			}
+			e.pendingDeviceConfigMux.Unlock()
+		}
+	}
+
+	// If neither a failsafe duration nor a failsafe limit were set this message does not pertain to this callback so we accept
+	go e.approveOrDenyDeviceConfiguration(msg, true, "")
+}
+
 func (e *LPC) AddFeatures() {
 	// client features
 	_ = e.LocalEntity.GetOrAddFeature(model.FeatureTypeTypeDeviceDiagnosis, model.RoleTypeClient)
@@ -209,6 +288,7 @@ func (e *LPC) AddFeatures() {
 	f = e.LocalEntity.GetOrAddFeature(model.FeatureTypeTypeDeviceConfiguration, model.RoleTypeServer)
 	f.AddFunctionType(model.FunctionTypeDeviceConfigurationKeyValueDescriptionListData, true, false)
 	f.AddFunctionType(model.FunctionTypeDeviceConfigurationKeyValueListData, true, true)
+	_ = f.AddWriteApprovalCallback(e.deviceConfigurationWriteCB)
 
 	if dcs, err := server.NewDeviceConfiguration(e.LocalEntity); err == nil {
 		dcs.AddKeyValueDescription(

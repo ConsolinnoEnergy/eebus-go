@@ -24,6 +24,7 @@ The supported functionality contains:
 ## Packages
 
 - `api`: global API interface definitions and eebus service configuration
+- `com/jsonrpc2`: provides an JSON RPC2 implementation, to communicate with systems not written in Golang
 - `features/client`: provides feature helpers with the local SPINE feature having the client role and the remote SPINE feature being the server for easy access to commonly used functions
 - `features/server`: provides feature helpers with the local SPINE feature having the server role for easy access to commonly used functions
 - `service`: central package which provides access to SHIP and SPINE. Use this to create the EEBUS service, its configuration and connect to remote EEBUS services
@@ -66,7 +67,7 @@ This includes example code for accepting LPC and LPP limits from a control box, 
 #### First Run
 
 ```sh
-go run cmd/hems/main.go 4714
+go run examples/hems/main.go 4715
 ```
 
 `4714` is the example server port that this process should listen on
@@ -76,7 +77,7 @@ The certificate and key and the local SKI will be generated and printed. You sho
 #### General Usage
 
 ```sh
-Usage: go run cmd/hems/main.go <serverport> <remoteski> <certfile> <keyfile>
+Usage: go run examples/hems/main.go <serverport> <remoteski> <certfile> <keyfile>
 ```
 
 - `remoteski` is the SKI of the remote device or service you want to connect to
@@ -90,7 +91,7 @@ This includes example code for accepting LPC from a control box.
 #### First Run
 
 ```sh
-go run cmd/hems/main.go 4715
+go run examples/hems/main.go 4715
 ```
 
 `4715` is the example server port that this process should listen on
@@ -100,7 +101,7 @@ The certificate and key and the local SKI will be generated and printed. You sho
 #### General Usage
 
 ```sh
-Usage: go run cmd/evse/main.go <serverport> <remoteski> <certfile> <keyfile>
+Usage: go run examples/evse/main.go <serverport> <remoteski> <certfile> <keyfile>
 ```
 
 - `remoteski` is the SKI of the remote device or service you want to connect to

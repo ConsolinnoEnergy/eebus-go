@@ -16,7 +16,7 @@ func MeasurementPhaseSpecificDataForFilter(
 	measurementFilter model.MeasurementDescriptionDataType,
 	energyDirection model.EnergyDirectionType,
 	validPhaseNameTypes []model.ElectricalConnectionPhaseNameType,
-) ([]float64, error) {
+) (map[model.ElectricalConnectionPhaseNameType]float64, error) {
 	measurement, err := client.NewMeasurement(localEntity, remoteEntity)
 	electricalConnection, err1 := client.NewElectricalConnection(localEntity, remoteEntity)
 	if err != nil || err1 != nil {
@@ -28,23 +28,28 @@ func MeasurementPhaseSpecificDataForFilter(
 		return nil, api.ErrDataNotAvailable
 	}
 
-	var result []float64
+	result := make(map[model.ElectricalConnectionPhaseNameType]float64, len(validPhaseNameTypes))
 
 	for _, item := range data {
 		if item.Value == nil || item.MeasurementId == nil {
 			continue
 		}
 
-		if validPhaseNameTypes != nil {
-			filter := model.ElectricalConnectionParameterDescriptionDataType{
-				MeasurementId: item.MeasurementId,
-			}
-			param, err := electricalConnection.GetParameterDescriptionsForFilter(filter)
-			if err != nil || len(param) == 0 ||
-				param[0].AcMeasuredPhases == nil ||
-				!slices.Contains(validPhaseNameTypes, *param[0].AcMeasuredPhases) {
-				continue
-			}
+		filter := model.ElectricalConnectionParameterDescriptionDataType{
+			MeasurementId: item.MeasurementId,
+		}
+		param, err := electricalConnection.GetParameterDescriptionsForFilter(filter)
+		if err != nil || len(param) == 0 || param[0].AcMeasuredPhases == nil {
+			// error getting parameter description
+			continue
+		}
+
+		// calculate the offset into result for the measured phase
+		phaseName := *param[0].AcMeasuredPhases
+		if validPhaseNameTypes != nil &&
+			!slices.Contains(validPhaseNameTypes, phaseName) {
+			// ignore phase measurements not specified in validPhaseNameTypes
+			continue
 		}
 
 		if energyDirection != "" {
@@ -70,7 +75,7 @@ func MeasurementPhaseSpecificDataForFilter(
 
 		value := item.Value.GetValue()
 
-		result = append(result, value)
+		result[phaseName] = value
 	}
 
 	return result, nil
