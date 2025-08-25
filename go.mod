@@ -2,11 +2,11 @@ module github.com/enbility/eebus-go
 
 go 1.24.1
 
-toolchain go1.24.2
+toolchain go1.24.4
 
 require (
-	github.com/enbility/ship-go v0.0.0-20250703103055-20e80b88a9aa
-	github.com/enbility/spine-go v0.0.0-20241209160856-1aed917e83e7
+	github.com/enbility/ship-go v0.0.0-20250703120135-5a60c7a2e4e5
+	github.com/enbility/spine-go v0.0.0-20250703115254-5468324c5be5
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/exp/jsonrpc2 v0.0.0-20240909161429-701f63a606c0
 )

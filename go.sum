@@ -1,11 +1,11 @@
-github.com/ConsolinnoEnergy/spine-go v0.0.0-20250825075328-1c14807459b1 h1:tNcfcHItIcLyyEcA/MYY0ArLC6NaK7lxU4u6wUb4+zI=
-github.com/ConsolinnoEnergy/spine-go v0.0.0-20250825075328-1c14807459b1/go.mod h1:JDbMWRaMtTS6dkPbzBLfBSvSs4eS32K1kk2EUrQCmcw=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/enbility/go-avahi v0.0.0-20240909195612-d5de6b280d7a h1:foChWb8lhzqa6lWDRs6COYMdp649YlUirFP8GqoT0JQ=
 github.com/enbility/go-avahi v0.0.0-20240909195612-d5de6b280d7a/go.mod h1:H64mhYcAQUGUUnVqMdZQf93kPecH4M79xwH95Lddt3U=
-github.com/enbility/ship-go v0.0.0-20250703103055-20e80b88a9aa h1:8TUgfj0YicZQxUw0ochOOGpE2raR9/KADv9oC3qzW8c=
-github.com/enbility/ship-go v0.0.0-20250703103055-20e80b88a9aa/go.mod h1:bqNU9+YnSeZ+FLMYTOyx0SBu+B/gRos1Usf9Hw+n4OM=
+github.com/enbility/ship-go v0.0.0-20250703120135-5a60c7a2e4e5 h1:Fg/FM/+P+AdVk9F/AWfOmzvgIpE6cVScVFZl/nMfMcY=
+github.com/enbility/ship-go v0.0.0-20250703120135-5a60c7a2e4e5/go.mod h1:bqNU9+YnSeZ+FLMYTOyx0SBu+B/gRos1Usf9Hw+n4OM=
+github.com/enbility/spine-go v0.0.0-20250703115254-5468324c5be5 h1:KyXpPKEOQ05f7NT4QKmvuEXjctHJ63t0Zfh5DVTEYIQ=
+github.com/enbility/spine-go v0.0.0-20250703115254-5468324c5be5/go.mod h1:JDbMWRaMtTS6dkPbzBLfBSvSs4eS32K1kk2EUrQCmcw=
 github.com/enbility/zeroconf/v2 v2.0.0-20240920094356-be1cae74fda6 h1:XOYvxKtT1oxT37w/5oEiRLuPbm9FuJPt3fiYhX0h8Po=
 github.com/enbility/zeroconf/v2 v2.0.0-20240920094356-be1cae74fda6/go.mod h1:BszP9qFV14mPXgyIREbgIdQtWxbAj3OKqvK02HihMoM=
 github.com/godbus/dbus/v5 v5.1.0 h1:4KLkAxT3aOY8Li4FRJe/KvhoNFFxo0m6fNuFUO8QJUk=
