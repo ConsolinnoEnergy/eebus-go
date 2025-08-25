@@ -1,10 +1,11 @@
 package api
 
 import (
+	"time"
+
 	"github.com/enbility/eebus-go/api"
 	spineapi "github.com/enbility/spine-go/api"
 	"github.com/enbility/spine-go/model"
-	"time"
 )
 
 type CemOHPCFInterface interface {
@@ -67,7 +68,7 @@ type CemOHPCFInterface interface {
 	//
 	// parameters:
 	//   - start: The start time of the power consumption
-	SchedulePowerConsumptionProcess(entity spineapi.EntityRemoteInterface, start time.Time, resultCB func(result model.ResultDataType)) (*model.MsgCounterType, error)
+	SchedulePowerConsumptionProcess(entity spineapi.EntityRemoteInterface, start time.Time, sequenceId uint, resultCB func(result model.ResultDataType)) (*model.MsgCounterType, error)
 
 	// stop (abort) the process [OHPCF-022/1].
 	AbortPowerConsumptionProcess(entity spineapi.EntityRemoteInterface, resultCB func(result model.ResultDataType)) (*model.MsgCounterType, error)

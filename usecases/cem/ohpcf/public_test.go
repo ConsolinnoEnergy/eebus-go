@@ -1,11 +1,12 @@
 package ohpcf
 
 import (
+	"time"
+
 	"github.com/enbility/eebus-go/usecases/api"
 	"github.com/enbility/spine-go/model"
 	"github.com/enbility/spine-go/util"
 	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 // Scenario 1
@@ -18,12 +19,16 @@ func (s *CemOhPCFSuite) Test_OptionalPowerConsumptionAvailable() {
 	assert.NotNil(s.T(), err)
 
 	data := &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				State: &model.PowerSequenceStateDataType{
-					State: util.Ptr(model.PowerSequenceStateTypeInactive),
-				},
-			}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					State: &model.PowerSequenceStateDataType{
+						State: util.Ptr(model.PowerSequenceStateTypeInactive),
+					},
+				}}},
+			},
 		}},
 	}
 
@@ -44,17 +49,21 @@ func (s *CemOhPCFSuite) Test_Power() {
 	assert.NotNil(s.T(), err)
 
 	data := &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				PowerTimeSlot: []model.SmartEnergyManagementPsPowerTimeSlotType{{
-					ValueList: &model.SmartEnergyManagementPsPowerTimeSlotValueListType{
-						Value: []model.PowerTimeSlotValueDataType{{
-							Value:     model.NewScaledNumberType(1004),
-							ValueType: util.Ptr(model.PowerTimeSlotValueTypeTypePower),
-						}},
-					},
-				}},
-			}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					PowerTimeSlot: []model.SmartEnergyManagementPsPowerTimeSlotType{{
+						ValueList: &model.SmartEnergyManagementPsPowerTimeSlotValueListType{
+							Value: []model.PowerTimeSlotValueDataType{{
+								Value:     model.NewScaledNumberType(1004),
+								ValueType: util.Ptr(model.PowerTimeSlotValueTypeTypePower),
+							}},
+						},
+					}},
+				}}},
+			},
 		}},
 	}
 
@@ -75,17 +84,21 @@ func (s *CemOhPCFSuite) Test_MaxPower() {
 	assert.NotNil(s.T(), err)
 
 	data := &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				PowerTimeSlot: []model.SmartEnergyManagementPsPowerTimeSlotType{{
-					ValueList: &model.SmartEnergyManagementPsPowerTimeSlotValueListType{
-						Value: []model.PowerTimeSlotValueDataType{{
-							Value:     model.NewScaledNumberType(1006),
-							ValueType: util.Ptr(model.PowerTimeSlotValueTypeTypePowerMax),
-						}},
-					},
-				}},
-			}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					PowerTimeSlot: []model.SmartEnergyManagementPsPowerTimeSlotType{{
+						ValueList: &model.SmartEnergyManagementPsPowerTimeSlotValueListType{
+							Value: []model.PowerTimeSlotValueDataType{{
+								Value:     model.NewScaledNumberType(1006),
+								ValueType: util.Ptr(model.PowerTimeSlotValueTypeTypePowerMax),
+							}},
+						},
+					}},
+				}}},
+			},
 		}},
 	}
 
@@ -106,12 +119,16 @@ func (s *CemOhPCFSuite) Test_ConsumptionIsStoppable() {
 	assert.NotNil(s.T(), err)
 
 	data := &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				OperatingConstraintsInterrupt: &model.OperatingConstraintsInterruptDataType{
-					IsStoppable: util.Ptr(true),
-				},
-			}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					OperatingConstraintsInterrupt: &model.OperatingConstraintsInterruptDataType{
+						IsStoppable: util.Ptr(true),
+					},
+				}}},
+			},
 		}},
 	}
 
@@ -132,12 +149,16 @@ func (s *CemOhPCFSuite) Test_ConsumptionIsPausable() {
 	assert.NotNil(s.T(), err)
 
 	data := &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				OperatingConstraintsInterrupt: &model.OperatingConstraintsInterruptDataType{
-					IsPausable: util.Ptr(true),
-				},
-			}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					OperatingConstraintsInterrupt: &model.OperatingConstraintsInterruptDataType{
+						IsPausable: util.Ptr(true),
+					},
+				}}},
+			},
 		}},
 	}
 
@@ -161,12 +182,16 @@ func (s *CemOhPCFSuite) Test_PowerConsumptionProcessStartTime() {
 	utcNowTimeObj := model.NewAbsoluteOrRelativeTimeTypeFromTime(utcNow)
 
 	data := &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				Schedule: &model.PowerSequenceScheduleDataType{
-					StartTime: utcNowTimeObj,
-				},
-			}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					Schedule: []model.PowerSequenceScheduleDataType{{
+						StartTime: utcNowTimeObj,
+					}},
+				}}},
+			},
 		}},
 	}
 
@@ -188,12 +213,16 @@ func (s *CemOhPCFSuite) Test_PowerConsumptionProcessState() {
 	assert.NotNil(s.T(), err)
 
 	data := &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				State: &model.PowerSequenceStateDataType{
-					State: util.Ptr(model.PowerSequenceStateTypeInactive),
-				},
-			}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					State: &model.PowerSequenceStateDataType{
+						State: util.Ptr(model.PowerSequenceStateTypeInactive),
+					},
+				}}},
+			},
 		}},
 	}
 
@@ -216,12 +245,16 @@ func (s *CemOhPCFSuite) Test_PowerConsumptionMinimalRunDuration() {
 	duration := time.Duration(120000000000000000)
 
 	data := &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				OperatingConstraintsDuration: &model.OperatingConstraintsDurationDataType{
-					ActiveDurationMin: model.NewDurationType(duration),
-				},
-			}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					OperatingConstraintsDuration: &model.OperatingConstraintsDurationDataType{
+						ActiveDurationMin: model.NewDurationType(duration),
+					},
+				}}},
+			},
 		}},
 	}
 
@@ -244,12 +277,16 @@ func (s *CemOhPCFSuite) Test_PowerConsumptionMinimalPauseDuration() {
 	duration := time.Duration(120000000000000000)
 
 	data := &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				OperatingConstraintsDuration: &model.OperatingConstraintsDurationDataType{
-					PauseDurationMin: model.NewDurationType(duration),
-				},
-			}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					OperatingConstraintsDuration: &model.OperatingConstraintsDurationDataType{
+						PauseDurationMin: model.NewDurationType(duration),
+					},
+				}}},
+			},
 		}},
 	}
 
@@ -265,10 +302,10 @@ func (s *CemOhPCFSuite) Test_PowerConsumptionMinimalPauseDuration() {
 // Scenario 2
 
 func (s *CemOhPCFSuite) Test_SchedulePowerConsumptionProcess() {
-	_, err := s.sut.SchedulePowerConsumptionProcess(s.mockRemoteEntity, time.Now(), nil)
+	_, err := s.sut.SchedulePowerConsumptionProcess(s.mockRemoteEntity, time.Now(), 1, nil)
 	assert.NotNil(s.T(), err)
 
-	msgCounter, err := s.sut.SchedulePowerConsumptionProcess(s.monitoredEntity, time.Now(), nil)
+	msgCounter, err := s.sut.SchedulePowerConsumptionProcess(s.monitoredEntity, time.Now(), 1, nil)
 	assert.NotNil(s.T(), msgCounter)
 	assert.Nil(s.T(), err)
 }
@@ -331,7 +368,9 @@ func (s *CemOhPCFSuite) Test_isDataAvailable() {
 	assert.Equal(s.T(), false, available)
 
 	_, fErr = rFeature.UpdateData(true, model.FunctionTypeSmartEnergyManagementPsData, &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{},
 	}, nil, nil)
 	assert.Nil(s.T(), fErr)
 
@@ -343,7 +382,9 @@ func (s *CemOhPCFSuite) Test_isDataAvailable() {
 	assert.Equal(s.T(), false, available)
 
 	_, fErr = rFeature.UpdateData(true, model.FunctionTypeSmartEnergyManagementPsData, &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{}},
 	}, nil, nil)
 	assert.Nil(s.T(), fErr)
 
@@ -355,8 +396,12 @@ func (s *CemOhPCFSuite) Test_isDataAvailable() {
 	assert.Equal(s.T(), false, available)
 
 	_, fErr = rFeature.UpdateData(true, model.FunctionTypeSmartEnergyManagementPsData, &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{},
+			},
 		}},
 	}, nil, nil)
 	assert.Nil(s.T(), fErr)
@@ -369,8 +414,12 @@ func (s *CemOhPCFSuite) Test_isDataAvailable() {
 	assert.Equal(s.T(), false, available)
 
 	_, fErr = rFeature.UpdateData(true, model.FunctionTypeSmartEnergyManagementPsData, &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{}},
+			},
 		}},
 	}, nil, nil)
 	assert.Nil(s.T(), fErr)
