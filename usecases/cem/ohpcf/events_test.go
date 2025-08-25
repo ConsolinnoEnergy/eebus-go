@@ -1,11 +1,12 @@
 package ohpcf
 
 import (
+	"time"
+
 	spineapi "github.com/enbility/spine-go/api"
 	"github.com/enbility/spine-go/model"
 	"github.com/enbility/spine-go/util"
 	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 func (s *CemOhPCFSuite) Test_Events() {
@@ -39,32 +40,16 @@ func (s *CemOhPCFSuite) Test_loadSmartEnergyManagementPsDataType() {
 	}
 
 	data := &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				State: &model.PowerSequenceStateDataType{
-					State: util.Ptr(model.PowerSequenceStateTypeInactive),
-				},
-			}},
-		}},
-	}
-	payload.Data = data
-	s.sut.loadSmartEnergyManagementPsDataType(payload)
-	assert.True(s.T(), s.eventCalled)
-
-	s.eventCalled = false
-
-	data = &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				PowerTimeSlot: []model.SmartEnergyManagementPsPowerTimeSlotType{{
-					ValueList: &model.SmartEnergyManagementPsPowerTimeSlotValueListType{
-						Value: []model.PowerTimeSlotValueDataType{{
-							Value:     model.NewScaledNumberType(1004),
-							ValueType: util.Ptr(model.PowerTimeSlotValueTypeTypePower),
-						}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					State: &model.PowerSequenceStateDataType{
+						State: util.Ptr(model.PowerSequenceStateTypeInactive),
 					},
-				}},
-			}},
+				}}},
+			},
 		}},
 	}
 	payload.Data = data
@@ -74,17 +59,64 @@ func (s *CemOhPCFSuite) Test_loadSmartEnergyManagementPsDataType() {
 	s.eventCalled = false
 
 	data = &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				PowerTimeSlot: []model.SmartEnergyManagementPsPowerTimeSlotType{{
-					ValueList: &model.SmartEnergyManagementPsPowerTimeSlotValueListType{
-						Value: []model.PowerTimeSlotValueDataType{{
-							Value:     model.NewScaledNumberType(10432),
-							ValueType: util.Ptr(model.PowerTimeSlotValueTypeTypePowerMax),
-						}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					PowerTimeSlot: []model.SmartEnergyManagementPsPowerTimeSlotType{{
+						ValueList: &model.SmartEnergyManagementPsPowerTimeSlotValueListType{
+							Value: []model.PowerTimeSlotValueDataType{{
+								Value:     model.NewScaledNumberType(1004),
+								ValueType: util.Ptr(model.PowerTimeSlotValueTypeTypePower),
+							}},
+						},
+					}},
+				}}},
+			},
+		}},
+	}
+	payload.Data = data
+	s.sut.loadSmartEnergyManagementPsDataType(payload)
+	assert.True(s.T(), s.eventCalled)
+
+	s.eventCalled = false
+
+	data = &model.SmartEnergyManagementPsDataType{
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					PowerTimeSlot: []model.SmartEnergyManagementPsPowerTimeSlotType{{
+						ValueList: &model.SmartEnergyManagementPsPowerTimeSlotValueListType{
+							Value: []model.PowerTimeSlotValueDataType{{
+								Value:     model.NewScaledNumberType(10432),
+								ValueType: util.Ptr(model.PowerTimeSlotValueTypeTypePowerMax),
+							}},
+						},
+					}},
+				}}},
+			},
+		}},
+	}
+	payload.Data = data
+	s.sut.loadSmartEnergyManagementPsDataType(payload)
+	assert.True(s.T(), s.eventCalled)
+
+	s.eventCalled = false
+
+	data = &model.SmartEnergyManagementPsDataType{
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					OperatingConstraintsInterrupt: &model.OperatingConstraintsInterruptDataType{
+						IsStoppable: util.Ptr(true),
 					},
-				}},
-			}},
+				}}},
+			},
 		}},
 	}
 	payload.Data = data
@@ -94,12 +126,16 @@ func (s *CemOhPCFSuite) Test_loadSmartEnergyManagementPsDataType() {
 	s.eventCalled = false
 
 	data = &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				OperatingConstraintsInterrupt: &model.OperatingConstraintsInterruptDataType{
-					IsStoppable: util.Ptr(true),
-				},
-			}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					OperatingConstraintsInterrupt: &model.OperatingConstraintsInterruptDataType{
+						IsPausable: util.Ptr(true),
+					},
+				}}},
+			},
 		}},
 	}
 	payload.Data = data
@@ -109,12 +145,16 @@ func (s *CemOhPCFSuite) Test_loadSmartEnergyManagementPsDataType() {
 	s.eventCalled = false
 
 	data = &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				OperatingConstraintsInterrupt: &model.OperatingConstraintsInterruptDataType{
-					IsPausable: util.Ptr(true),
-				},
-			}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					Schedule: []model.PowerSequenceScheduleDataType{{
+						StartTime: model.NewAbsoluteOrRelativeTimeTypeFromTime(time.Time{}),
+					}},
+				}}},
+			},
 		}},
 	}
 	payload.Data = data
@@ -124,12 +164,16 @@ func (s *CemOhPCFSuite) Test_loadSmartEnergyManagementPsDataType() {
 	s.eventCalled = false
 
 	data = &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				Schedule: &model.PowerSequenceScheduleDataType{
-					StartTime: model.NewAbsoluteOrRelativeTimeTypeFromTime(time.Time{}),
-				},
-			}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					State: &model.PowerSequenceStateDataType{
+						State: util.Ptr(model.PowerSequenceStateTypeInvalid),
+					},
+				}}},
+			},
 		}},
 	}
 	payload.Data = data
@@ -139,12 +183,16 @@ func (s *CemOhPCFSuite) Test_loadSmartEnergyManagementPsDataType() {
 	s.eventCalled = false
 
 	data = &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				State: &model.PowerSequenceStateDataType{
-					State: util.Ptr(model.PowerSequenceStateTypeInvalid),
-				},
-			}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					OperatingConstraintsDuration: &model.OperatingConstraintsDurationDataType{
+						ActiveDurationMin: model.NewDurationType(1000),
+					},
+				}}},
+			},
 		}},
 	}
 	payload.Data = data
@@ -154,27 +202,16 @@ func (s *CemOhPCFSuite) Test_loadSmartEnergyManagementPsDataType() {
 	s.eventCalled = false
 
 	data = &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				OperatingConstraintsDuration: &model.OperatingConstraintsDurationDataType{
-					ActiveDurationMin: model.NewDurationType(1000),
-				},
-			}},
-		}},
-	}
-	payload.Data = data
-	s.sut.loadSmartEnergyManagementPsDataType(payload)
-	assert.True(s.T(), s.eventCalled)
-
-	s.eventCalled = false
-
-	data = &model.SmartEnergyManagementPsDataType{
-		Alternatives: []model.SmartEnergyManagementPsAlternativesType{{
-			PowerSequence: []model.SmartEnergyManagementPsPowerSequenceType{{
-				OperatingConstraintsDuration: &model.OperatingConstraintsDurationDataType{
-					PauseDurationMin: model.NewDurationType(1000),
-				},
-			}},
+		Alternatives: [][]struct {
+			PowerSequence [][]model.SmartEnergyManagementPsPowerSequenceType `json:"powerSequence,omitempty"`
+		}{{
+			{
+				PowerSequence: [][]model.SmartEnergyManagementPsPowerSequenceType{{{
+					OperatingConstraintsDuration: &model.OperatingConstraintsDurationDataType{
+						PauseDurationMin: model.NewDurationType(1000),
+					},
+				}}},
+			},
 		}},
 	}
 	payload.Data = data

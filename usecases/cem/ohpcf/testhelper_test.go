@@ -2,6 +2,9 @@ package ohpcf
 
 import (
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/enbility/eebus-go/api"
 	"github.com/enbility/eebus-go/mocks"
 	"github.com/enbility/eebus-go/service"
@@ -15,8 +18,6 @@ import (
 	"github.com/enbility/spine-go/util"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"testing"
-	"time"
 )
 
 func TestCemOHPCFSuite(t *testing.T) {
@@ -155,7 +156,7 @@ func setupDevices(
 		FeatureInformation: featureInformations,
 	}
 
-	entities, err := remoteDevice.AddEntityAndFeatures(true, detailedData)
+	entities, err := remoteDevice.AddEntityAndFeatures(true, detailedData, nil)
 	if err != nil {
 		fmt.Println(err)
 	}

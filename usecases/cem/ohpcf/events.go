@@ -39,13 +39,13 @@ func (o *OHPCF) loadSmartEnergyManagementPsDataType(payload spineapi.EventPayloa
 	}
 
 	if len(data.Alternatives) == 1 {
-		alternative := data.Alternatives[0]
+		alternative := data.Alternatives[0][0]
 
 		if len(alternative.PowerSequence) != 1 {
 			return
 		}
 
-		request := alternative.PowerSequence[0]
+		request := alternative.PowerSequence[0][0]
 
 		if len(request.PowerTimeSlot) == 1 &&
 			request.PowerTimeSlot[0].ValueList != nil &&
@@ -77,7 +77,7 @@ func (o *OHPCF) loadSmartEnergyManagementPsDataType(payload spineapi.EventPayloa
 		}
 
 		if request.Schedule != nil &&
-			request.Schedule.StartTime != nil {
+			request.Schedule[0].StartTime != nil {
 			// [OHPCF-012/1]
 			o.EventCB(payload.Ski, payload.Device, payload.Entity, DataUpdateConsumptionStartTime)
 		}

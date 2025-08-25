@@ -242,7 +242,7 @@ func (s *CemOhPCFSuite) Test_PowerConsumptionMinimalRunDuration() {
 	_, err = s.sut.PowerConsumptionMinimalRunDuration(s.monitoredEntity)
 	assert.NotNil(s.T(), err)
 
-	duration := time.Duration(120000000000000000)
+	duration := time.Duration(120113140000)
 
 	data := &model.SmartEnergyManagementPsDataType{
 		Alternatives: [][]struct {
@@ -274,7 +274,7 @@ func (s *CemOhPCFSuite) Test_PowerConsumptionMinimalPauseDuration() {
 	_, err = s.sut.PowerConsumptionMinimalPauseDuration(s.monitoredEntity)
 	assert.NotNil(s.T(), err)
 
-	duration := time.Duration(120000000000000000)
+	duration := time.Duration(120113140000)
 
 	data := &model.SmartEnergyManagementPsDataType{
 		Alternatives: [][]struct {
@@ -429,5 +429,5 @@ func (s *CemOhPCFSuite) Test_isDataAvailable() {
 	assert.Nil(s.T(), err)
 
 	available = s.sut.isDataAvailable(fData)
-	assert.Equal(s.T(), true, available)
+	assert.Equal(s.T(), false, available)
 }

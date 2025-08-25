@@ -165,6 +165,7 @@ func (o *OHPCF) PowerConsumptionMinimalRunDuration(entity spineapi.EntityRemoteI
 
 	if data.Alternatives[0][0].PowerSequence[0][0].OperatingConstraintsDuration != nil &&
 		data.Alternatives[0][0].PowerSequence[0][0].OperatingConstraintsDuration.ActiveDurationMin != nil {
+
 		return data.Alternatives[0][0].PowerSequence[0][0].OperatingConstraintsDuration.ActiveDurationMin.GetTimeDuration()
 	}
 
@@ -302,9 +303,27 @@ func (o *OHPCF) checkEntityTypeAndGetData(entity spineapi.EntityRemoteInterface)
 }
 
 func (o *OHPCF) isDataAvailable(data *model.SmartEnergyManagementPsDataType) bool {
-	return len(data.Alternatives) == 1 &&
+	//if data == nil || data.Alternatives == nil || len(data.Alternatives) == 0 {
+	//	return false
+	//}
+	//
+	//if len(data.Alternatives[0]) == 0 {
+	//	return false
+	//}
+	//
+	//if data.Alternatives[0][0].PowerSequence == nil || len(data.Alternatives[0][0].PowerSequence) == 0 {
+	//	return false
+	//}
+	//
+	//if len(data.Alternatives[0][0].PowerSequence[0]) == 0 {
+	//	return false
+	//}
+	//
+	//return true
+
+	return data != nil && data.Alternatives != nil && len(data.Alternatives) == 1 && len(data.Alternatives[0]) > 0 &&
 		data.Alternatives[0][0].PowerSequence != nil &&
-		len(data.Alternatives[0][0].PowerSequence) == 1
+		len(data.Alternatives[0][0].PowerSequence) > 0 && len(data.Alternatives[0][0].PowerSequence[0]) > 0
 }
 
 func (o *OHPCF) powerOfType(entity spineapi.EntityRemoteInterface, valueType model.PowerTimeSlotValueTypeType) (float64, error) {
